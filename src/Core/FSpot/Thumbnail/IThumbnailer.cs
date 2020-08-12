@@ -30,7 +30,7 @@ using Hyena;
 
 namespace FSpot.Thumbnail
 {
-	interface IThumbnailer
+	internal interface IThumbnailer
 	{
 		bool TryCreateThumbnail (SafeUri thumbnailUri, ThumbnailSize size);
 	}

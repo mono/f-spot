@@ -1,50 +1,27 @@
-//
-// EditTagIconDialog.cs
-//
-// Author:
-//   Stephane Delcroix <stephane@delcroix.org>
-//   Ruben Vermeersch <ruben@savanne.be>
-//
 // Copyright (C) 2009-2010 Novell, Inc.
 // Copyright (C) 2009 Stephane Delcroix
 // Copyright (C) 2009-2010 Ruben Vermeersch
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
-
-using Mono.Unix;
-
-using Gtk;
 
 using FSpot.Core;
 using FSpot.Database;
 using FSpot.Imaging;
+using FSpot.Models;
 using FSpot.Query;
 using FSpot.Settings;
 using FSpot.Utils;
 using FSpot.Widgets;
 
+using Gtk;
+
 using Hyena;
 using Hyena.Widgets;
+
+using Mono.Unix;
 
 namespace FSpot.UI.Dialog
 {
@@ -72,32 +49,29 @@ namespace FSpot.UI.Dialog
 			TransientFor = parent_window;
 			Title = string.Format (Catalog.GetString ("Edit Icon for Tag {0}"), t.Name);
 
-			preview_pixbuf = t.Icon;
-			Cms.Profile screen_profile;
-			if (preview_pixbuf != null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out screen_profile)) {
+			preview_pixbuf = t.TagIcon.Icon;
+			if (preview_pixbuf != null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screenProfile)) {
 				preview_image.Pixbuf = preview_pixbuf.Copy ();
-				ColorManagement.ApplyProfile (preview_image.Pixbuf, screen_profile);
+				ColorManagement.ApplyProfile (preview_image.Pixbuf, screenProfile);
 			} else
 				preview_image.Pixbuf = preview_pixbuf;
 
 			query = new PhotoQuery (db.Photos);
 
 			if (db.Tags.Hidden != null)
-				query.Terms = OrTerm.FromTags (new [] {t});
+				query.Terms = OrTerm.FromTags (new[] { t });
 			else
 				query.Terms = new Literal (t);
 
-			image_view = new PhotoImageView (query) {CropHelpers = false};
-			image_view.SelectionXyRatio = 1.0;
+			image_view = new PhotoImageView (query) { CropHelpers = false, SelectionXyRatio = 1.0 };
 			image_view.SelectionChanged += HandleSelectionChanged;
 			image_view.PhotoChanged += HandlePhotoChanged;
 
-			external_photo_chooser = new Gtk.FileChooserButton (Catalog.GetString ("Select Photo from file"),
-					Gtk.FileChooserAction.Open);
-
-			external_photo_chooser.Filter = new FileFilter();
-			external_photo_chooser.Filter.AddPixbufFormats();
-                        external_photo_chooser.LocalOnly = false;
+			external_photo_chooser = new Gtk.FileChooserButton (Catalog.GetString ("Select Photo from file"), Gtk.FileChooserAction.Open) {
+				Filter = new FileFilter ()
+			};
+			external_photo_chooser.Filter.AddPixbufFormats ();
+			external_photo_chooser.LocalOnly = false;
 			external_photo_chooser_hbox.PackStart (external_photo_chooser);
 			external_photo_chooser.Show ();
 			external_photo_chooser.SelectionChanged += HandleExternalFileSelectionChanged;
@@ -107,7 +81,7 @@ namespace FSpot.UI.Dialog
 			if (query.Count > 0) {
 				photo_spin_button.Wrap = true;
 				photo_spin_button.Adjustment.Lower = 1.0;
-				photo_spin_button.Adjustment.Upper = (double) query.Count;
+				photo_spin_button.Adjustment.Upper = (double)query.Count;
 				photo_spin_button.Adjustment.StepIncrement = 1.0;
 				photo_spin_button.ValueChanged += HandleSpinButtonChanged;
 
@@ -126,14 +100,12 @@ namespace FSpot.UI.Dialog
 
 			icon_store = new ListStore (typeof (string), typeof (Gdk.Pixbuf));
 
-			icon_view = new Gtk.IconView (icon_store);
-			icon_view.PixbufColumn = 1;
-			icon_view.SelectionMode = SelectionMode.Single;
+			icon_view = new Gtk.IconView (icon_store) { PixbufColumn = 1, SelectionMode = SelectionMode.Single };
 			icon_view.SelectionChanged += HandleIconSelectionChanged;
 
 			icon_scrolled_window.Add (icon_view);
 
-			icon_view.Show();
+			icon_view.Show ();
 
 			image_view.Show ();
 
@@ -151,13 +123,11 @@ namespace FSpot.UI.Dialog
 			set {
 				icon_name = null;
 				preview_pixbuf = value;
-				Cms.Profile screen_profile;
-				if (value!= null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out screen_profile)) {
+				if (value != null && ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
 					preview_image.Pixbuf = value.Copy ();
 					ColorManagement.ApplyProfile (preview_image.Pixbuf, screen_profile);
 				} else
 					preview_image.Pixbuf = value;
-
 			}
 
 		}
@@ -166,7 +136,7 @@ namespace FSpot.UI.Dialog
 			get { return icon_name; }
 			set {
 				icon_name = value;
-				PreviewPixbuf = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, value, 48, (IconLookupFlags) 0);
+				PreviewPixbuf = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, value, 48, (IconLookupFlags)0);
 			}
 
 		}
@@ -179,30 +149,23 @@ namespace FSpot.UI.Dialog
 		}
 
 		void HandleExternalFileSelectionChanged (object sender, EventArgs args)
-		{	//Note: The filter on the FileChooserButton's dialog means that we will have a Pixbuf compatible uri here
+		{
+			//Note: The filter on the FileChooserButton's dialog means that we will have a Pixbuf compatible uri here
 			CreateTagIconFromExternalPhoto ();
 		}
 
 		void CreateTagIconFromExternalPhoto ()
 		{
 			try {
-				using (var img = App.Instance.Container.Resolve<IImageFileFactory> ().Create (new SafeUri(external_photo_chooser.Uri, true))) {
-					using (Gdk.Pixbuf external_image = img.Load ()) {
-						PreviewPixbuf = PixbufUtils.TagIconFromPixbuf (external_image);
-					}
-				}
-			} catch (Exception) {
+				using var img = App.Instance.Container.Resolve<IImageFileFactory> ().Create (new SafeUri (external_photo_chooser.Uri, true));
+				using Gdk.Pixbuf external_image = img.Load ();
+				PreviewPixbuf = PixbufUtils.TagIconFromPixbuf (external_image);
+			} catch (Exception ex) {
 				string caption = Catalog.GetString ("Unable to load image");
-				string message = string.Format (Catalog.GetString ("Unable to load \"{0}\" as icon for the tag"),
-					                 external_photo_chooser.Uri);
-				HigMessageDialog md = new HigMessageDialog (this,
-									    DialogFlags.DestroyWithParent,
-									    MessageType.Error,
-									    ButtonsType.Close,
-									    caption,
-									    message);
-				md.Run();
-				md.Destroy();
+				string message = string.Format (Catalog.GetString ("Unable to load \"{0}\" as icon for the tag"), external_photo_chooser.Uri);
+
+				using var md = new HigMessageDialog (this, DialogFlags.DestroyWithParent, MessageType.Error, ButtonsType.Close, caption, message);
+				md.Run ();
 			}
 		}
 
@@ -215,11 +178,10 @@ namespace FSpot.UI.Dialog
 
 			if (image_view.Pixbuf != null) {
 				if (image_view.Selection != Gdk.Rectangle.Zero) {
-					using (var tmp = new Gdk.Pixbuf (image_view.Pixbuf, x, y, width, height)) {
-						Gdk.Pixbuf transformed = FSpot.Utils.PixbufUtils.TransformOrientation (tmp, image_view.PixbufOrientation);
-						PreviewPixbuf = PixbufUtils.TagIconFromPixbuf (transformed);
-						transformed.Dispose ();
-					}
+					using var tmp = new Gdk.Pixbuf (image_view.Pixbuf, x, y, width, height);
+					Gdk.Pixbuf transformed = FSpot.Utils.PixbufUtils.TransformOrientation (tmp, image_view.PixbufOrientation);
+					PreviewPixbuf = PixbufUtils.TagIconFromPixbuf (transformed);
+					transformed.Dispose ();
 				} else {
 					Gdk.Pixbuf transformed = FSpot.Utils.PixbufUtils.TransformOrientation (image_view.Pixbuf, image_view.PixbufOrientation);
 					PreviewPixbuf = PixbufUtils.TagIconFromPixbuf (transformed);
@@ -231,8 +193,7 @@ namespace FSpot.UI.Dialog
 		public void HandlePhotoChanged (object sender, EventArgs e)
 		{
 			int item = image_view.Item.Index;
-			photo_label.Text = string.Format (Catalog.GetString ("Photo {0} of {1}"),
-							  item + 1, query.Count);
+			photo_label.Text = string.Format (Catalog.GetString ("Photo {0} of {1}"), item + 1, query.Count);
 
 			photo_spin_button.Value = item + 1;
 			HandleSelectionChanged (null, null);
@@ -243,17 +204,16 @@ namespace FSpot.UI.Dialog
 			if (icon_view.SelectedItems.Length == 0)
 				return;
 
-			TreeIter iter;
-			icon_store.GetIter (out iter, icon_view.SelectedItems [0]);
-			ThemeIconName = (string) icon_store.GetValue (iter, 0);
+			icon_store.GetIter (out var iter, icon_view.SelectedItems[0]);
+			ThemeIconName = (string)icon_store.GetValue (iter, 0);
 		}
 
 		public bool FillIconView ()
 		{
 			icon_store.Clear ();
-			string [] icon_list = FSpotConfiguration.IconTheme.ListIcons ("Emblems");
+			string[] icon_list = FSpotConfiguration.IconTheme.ListIcons ("Emblems");
 			foreach (string item_name in icon_list)
-				icon_store.AppendValues (item_name, GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, item_name, 32, (IconLookupFlags) 0));
+				icon_store.AppendValues (item_name, GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, item_name, 32, (IconLookupFlags)0));
 			return false;
 		}
 	}

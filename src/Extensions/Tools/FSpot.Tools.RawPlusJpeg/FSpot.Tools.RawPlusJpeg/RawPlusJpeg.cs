@@ -1,42 +1,20 @@
-//
-// RawPlusJpeg.cs
-//
-// Author:
-//   Stephane Delcroix <stephane@delcroix.org>
-//
 // Copyright (C) 2007-2009 Novell, Inc.
 // Copyright (C) 2007-2009 Stephane Delcroix
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 
-using Gtk;
-
-using FSpot;
 using FSpot.Core;
 using FSpot.Extensions;
 using FSpot.Imaging;
+using FSpot.Models;
+using FSpot.Services;
 using FSpot.Utils;
+
+using Gtk;
 
 using Hyena;
 using Hyena.Widgets;
@@ -58,7 +36,7 @@ namespace FSpot.Tools.RawPlusJpeg
 				"Do it now"))
 				return;
 
-			Photo [] photos = ObsoletePhotoQueries.Query ((Tag [])null, null, null, null);
+			Photo [] photos = ObsoletePhotoQueries.Query (null, null, null, null);
 			Array.Sort (photos, new IPhotoComparer.CompareDirectory ());
 
 			Photo raw = null;
@@ -91,14 +69,14 @@ namespace FSpot.Tools.RawPlusJpeg
 			App.Instance.Organizer.UpdateQuery ();
 		}
 
-		private static bool SamePlaceAndName (Photo p1, Photo p2)
+		static bool SamePlaceAndName (Photo p1, Photo p2)
 		{
 			return DirectoryPath (p1) == DirectoryPath (p2) &&
 				System.IO.Path.GetFileNameWithoutExtension (p1.Name) == System.IO.Path.GetFileNameWithoutExtension (p2.Name);
 		}
 
 
-		private static string DirectoryPath (Photo p)
+		static string DirectoryPath (Photo p)
 		{
 			return p.VersionUri (Photo.OriginalVersionId).GetBaseUri ();
 		}
@@ -129,8 +107,8 @@ namespace FSpot.Tools.RawPlusJpeg
 						Log.Exception (e);
 					}
 				}
-				raw.AddTag (jpeg.Tags);
-				uint [] version_ids = jpeg.VersionIds;
+				TagService.Instance.Add (raw, jpeg.Tags);
+				long [] version_ids = jpeg.VersionIds;
 				Array.Reverse (version_ids);
 				foreach (uint version_id in version_ids) {
 					try {

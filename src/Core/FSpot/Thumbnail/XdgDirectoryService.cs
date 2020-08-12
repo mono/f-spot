@@ -35,7 +35,7 @@ namespace FSpot.Thumbnail
 	/// Implements some XDG directory specification
 	/// http://standards.freedesktop.org/basedir-spec/basedir-spec-latest.html
 	/// </summary>
-	class XdgDirectoryService : IXdgDirectoryService
+	internal class XdgDirectoryService : IXdgDirectoryService
 	{
 		readonly IFileSystem fileSystem;
 		readonly IEnvironment environment;

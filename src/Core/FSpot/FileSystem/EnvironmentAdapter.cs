@@ -30,7 +30,7 @@ using System;
 
 namespace FSpot.FileSystem
 {
-	class EnvironmentAdapter : IEnvironment
+	internal class EnvironmentAdapter : IEnvironment
 	{
 		#region IEnvironment implementation
 

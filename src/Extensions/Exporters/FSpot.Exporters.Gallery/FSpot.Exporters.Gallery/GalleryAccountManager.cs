@@ -37,7 +37,7 @@ namespace FSpot.Exporters.Gallery
 {
 	public class GalleryAccountManager
 	{
-		private static GalleryAccountManager instance;
+		static GalleryAccountManager instance;
 		string xml_path;
 		List<GalleryAccount> accounts;
 
@@ -52,7 +52,7 @@ namespace FSpot.Exporters.Gallery
 			return instance;
 		}
 
-		private GalleryAccountManager ()
+		GalleryAccountManager ()
 		{
 			// FIXME this xml file path should be be retrieved from a central location not hard coded there
 			xml_path = Path.Combine (FSpotConfiguration.BaseDirectory, "Accounts.xml");
@@ -113,7 +113,7 @@ namespace FSpot.Exporters.Gallery
 			writer.Close ();
 		}
 
-		private GalleryAccount ParseAccount (System.Xml.XmlNode node)
+		GalleryAccount ParseAccount (System.Xml.XmlNode node)
 		{
 			if (node.Name != "Account")
 
@@ -148,7 +148,7 @@ namespace FSpot.Exporters.Gallery
 			return new GalleryAccount (name, url, username, password, version);
 		}
 
-		private void ReadAccounts ()
+		void ReadAccounts ()
 		{
 
 			if (! File.Exists (xml_path)) {

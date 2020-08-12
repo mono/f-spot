@@ -1,39 +1,11 @@
-//
-// Filmstrip.cs
-//
-// Author:
-//   Daniel Köb <daniel.koeb@peony.at>
-//   Ruben Vermeersch <ruben@savanne.be>
-//   Lorenzo Milesi <maxxer@yetopen.it>
-//   Stephane Delcroix <stephane@delcroix.org>
-//   Stephen Shaw <sshaw@decriptor.com>
-//
 // Copyright (C) 2014 Daniel Köb
-// Copyright (C) 2013 Stephen Shaw
+// Copyright (C) 2013-2020 Stephen Shaw
 // Copyright (C) 2008-2010 Novell, Inc.
 // Copyright (C) 2008, 2010 Ruben Vermeersch
 // Copyright (C) 2008-2009 Lorenzo Milesi
 // Copyright (C) 2008-2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 //TODO:
 //	* only redraw required parts on ExposeEvents (low)
@@ -41,15 +13,21 @@
 
 using System;
 using System.Collections.Generic;
+
 using FSpot.Bling;
+using FSpot.Cms;
 using FSpot.Core;
 using FSpot.Imaging;
 using FSpot.Settings;
 using FSpot.Thumbnail;
 using FSpot.Utils;
+
 using Gdk;
+
 using Gtk;
+
 using Hyena;
+using Mono.Unix;
 
 namespace FSpot.Widgets
 {
@@ -62,11 +40,7 @@ namespace FSpot.Widgets
 
 		DoubleAnimation animation;
 
-		bool extendable = true;
-		public bool Extendable {
-			get { return extendable; }
-			set { extendable = value; }
-		}
+		public bool Extendable { get; set; } = true;
 
 		Orientation orientation = Orientation.Horizontal;
 		public Orientation Orientation {
@@ -137,8 +111,9 @@ namespace FSpot.Widgets
 				return background_tile;
 			}
 			set {
-				if (background_tile != value && background_tile != null)
-					background_tile.Dispose ();
+				if (background_tile != value)
+					background_tile?.Dispose ();
+
 				background_tile = value;
 				BackgroundPixbuf = null;
 			}
@@ -214,8 +189,7 @@ namespace FSpot.Widgets
 				animation.To = value;
 				animation.Restart ();
 
-				if (PositionChanged != null)
-					PositionChanged (this, EventArgs.Empty);
+				PositionChanged?.Invoke (this, EventArgs.Empty);
 			}
 		}
 
@@ -267,7 +241,7 @@ namespace FSpot.Widgets
 					int height = BackgroundTile.Height;
 					switch (Orientation) {
 					case Orientation.Horizontal:
-						if (Allocation.Width < min_length || !extendable)
+						if (Allocation.Width < min_length || !Extendable)
 							length = min_length;
 						else
 							length = Allocation.Width;
@@ -275,7 +249,7 @@ namespace FSpot.Widgets
 						length = length - length % BackgroundTile.Width;
 						break;
 					case Orientation.Vertical:
-						if (Allocation.Height < min_height || !extendable)
+						if (Allocation.Height < min_height || !Extendable)
 							height = min_height;
 						else
 							height = Allocation.Height;
@@ -303,9 +277,9 @@ namespace FSpot.Widgets
 				return background_pixbuf;
 			}
 			set {
-				if (background_pixbuf != value && background_pixbuf != null) {
-					background_pixbuf.Dispose ();
-				}
+				if (background_pixbuf != value)
+					background_pixbuf?.Dispose ();
+
 				background_pixbuf = value;
 			}
 		}
@@ -321,12 +295,12 @@ namespace FSpot.Widgets
 			if (selection.Collection.Count == 0)
 				return true;
 
-			if (Orientation == Orientation.Horizontal && (extendable && Allocation.Width >= BackgroundPixbuf.Width + (2 * x_offset) + BackgroundTile.Width) ||
-				Orientation == Orientation.Vertical && (extendable && Allocation.Height >= BackgroundPixbuf.Height + (2 * y_offset) + BackgroundTile.Height) )
+			if (Orientation == Orientation.Horizontal && (Extendable && Allocation.Width >= BackgroundPixbuf.Width + (2 * x_offset) + BackgroundTile.Width) ||
+				Orientation == Orientation.Vertical && (Extendable && Allocation.Height >= BackgroundPixbuf.Height + (2 * y_offset) + BackgroundTile.Height) )
 				BackgroundPixbuf = null;
 
-			if ( Orientation == Orientation.Horizontal && (extendable && Allocation.Width < BackgroundPixbuf.Width + (2 * x_offset) ) ||
-				Orientation == Orientation.Vertical && ( extendable && Allocation.Height < BackgroundPixbuf.Height + (2 * y_offset) ))
+			if ( Orientation == Orientation.Horizontal && (Extendable && Allocation.Width < BackgroundPixbuf.Width + (2 * x_offset) ) ||
+				Orientation == Orientation.Vertical && ( Extendable && Allocation.Height < BackgroundPixbuf.Height + (2 * y_offset) ))
 				BackgroundPixbuf = null;
 
 			int xpad = 0, ypad = 0;
@@ -495,12 +469,10 @@ namespace FSpot.Widgets
 		bool DrawOrientationMenu (EventButton args)
 		{
 			Menu placement_menu = new Menu ();
-			GtkUtil.MakeCheckMenuItem (placement_menu,
-							Mono.Unix.Catalog.GetString ("_Horizontal"),
+			GtkUtil.MakeCheckMenuItem (placement_menu, Catalog.GetString ("_Horizontal"),
 							App.Instance.Organizer.HandleFilmstripHorizontal,
 							true, Orientation == Orientation.Horizontal, true);
-			GtkUtil.MakeCheckMenuItem (placement_menu,
-							Mono.Unix.Catalog.GetString ("_Vertical"),
+			GtkUtil.MakeCheckMenuItem (placement_menu, Catalog.GetString ("_Vertical"),
 							App.Instance.Organizer.HandleFilmstripVertical,
 							true, Orientation == Orientation.Vertical, true);
 
@@ -531,12 +503,7 @@ namespace FSpot.Widgets
 			return true;
 		}
 
-		protected Pixbuf GetPixbuf (int i)
-		{
-			return GetPixbuf (i, false);
-		}
-
-		protected virtual Pixbuf GetPixbuf (int i, bool highlighted)
+		protected virtual Pixbuf GetPixbuf (int i, bool highlighted = false)
 		{
 			Pixbuf current = null;
 			SafeUri uri = (selection.Collection [i]).DefaultVersion.Uri;
@@ -565,8 +532,7 @@ namespace FSpot.Widgets
 			}
 
 			//FIXME: we might end up leaking a pixbuf here
-			Cms.Profile screen_profile;
-			if (ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out screen_profile)) {
+			if (ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out var screen_profile)) {
 				Pixbuf t = current.Copy ();
 				current = t;
 				ColorManagement.ApplyProfile (current, screen_profile);

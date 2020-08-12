@@ -53,12 +53,11 @@ namespace FSpot.Widgets
 		VBox widgets;
 		VButtonBox buttons;
 		Widget active_editor;
-
-		List<Editor> editors;
+		readonly List<Editor> editors;
 		Editor current_editor;
 
 		// Used to make buttons insensitive when selecting multiple images.
-		Dictionary<Editor, Button> editor_buttons;
+		readonly Dictionary<Editor, Button> editor_buttons;
 
 		EditorPage page;
 		internal EditorPage Page {
@@ -89,14 +88,14 @@ namespace FSpot.Widgets
 
 		ProgressDialog progress;
 
-		void OnProcessingStarted (string name, int count) {
+		void OnProcessingStarted (string name, int count)
+		{
 			progress = new ProgressDialog (name, ProgressDialog.CancelButtonType.None, count, App.Instance.Organizer.Window);
 		}
 
 		void OnProcessingStep (int done)
 		{
-			if (progress != null)
-				progress.Update (string.Empty);
+			progress?.Update (string.Empty);
 		}
 
 		void OnProcessingFinished ()
@@ -110,8 +109,7 @@ namespace FSpot.Widgets
 		internal void ChangeButtonVisibility ()
 		{
 			foreach (Editor editor in editors) {
-				Button button;
-				if (editor_buttons.TryGetValue (editor, out button))
+				if (editor_buttons.TryGetValue (editor, out var button))
 					button.Visible = Page.InPhotoView || editor.CanHandleMultiple;
 			}
 		}
@@ -145,20 +143,23 @@ namespace FSpot.Widgets
 			}
 
 			if (widgets == null) {
-				widgets = new VBox (false, 0);
-				widgets.NoShowAll = true;
+				widgets = new VBox (false, 0) {
+					NoShowAll = true
+				};
 				widgets.Show ();
-				Viewport widgets_port = new Viewport ();
-				widgets_port.Add (widgets);
+				Viewport widgets_port = new Viewport {
+					widgets
+				};
 				Add (widgets_port);
 				widgets_port.ShowAll ();
 			}
 
 			// Build the widget (first time we call this method).
-			buttons = new VButtonBox ();
-			buttons.BorderWidth = 5;
-			buttons.Spacing = 5;
-			buttons.LayoutStyle = ButtonBoxStyle.Start;
+			buttons = new VButtonBox {
+				BorderWidth = 5,
+				Spacing = 5,
+				LayoutStyle = ButtonBoxStyle.Start
+			};
 
 			foreach (Editor editor in editors)
 				PackButton (editor);
@@ -207,7 +208,7 @@ namespace FSpot.Widgets
 				string msg = Catalog.GetString ("No selection available");
 				string desc = Catalog.GetString ("This tool requires an active selection. Please select a region of the photo and try the operation again");
 
-				HigMessageDialog md = new HigMessageDialog (App.Instance.Organizer.Window,
+				var md = new HigMessageDialog (App.Instance.Organizer.Window,
 										DialogFlags.DestroyWithParent,
 										Gtk.MessageType.Error, ButtonsType.Ok,
 										msg,
@@ -226,13 +227,13 @@ namespace FSpot.Widgets
 				string msg = Catalog.GetPluralString ("Error saving adjusted photo", "Error saving adjusted photos",
 									editor.State.Items.Length);
 				string desc = string.Format (Catalog.GetString ("Received exception \"{0}\". Note that you have to develop RAW files into JPEG before you can edit them."),
-							     e.Message);
+								 e.Message);
 
-				HigMessageDialog md = new HigMessageDialog (App.Instance.Organizer.Window,
-									    DialogFlags.DestroyWithParent,
-									    MessageType.Error, ButtonsType.Ok,
-									    msg,
-									    desc);
+				var md = new HigMessageDialog (App.Instance.Organizer.Window,
+										DialogFlags.DestroyWithParent,
+										MessageType.Error, ButtonsType.Ok,
+										msg,
+										desc);
 				md.Run ();
 				md.Destroy ();
 			}
@@ -249,7 +250,7 @@ namespace FSpot.Widgets
 			// Top label
 			VBox vbox = new VBox (false, 4);
 			Label label = new Label ();
-			label.Markup = string.Format("<big><b>{0}</b></big>", editor.Label);
+			label.Markup = $"<big><b>{editor.Label}</b></big>";
 			vbox.PackStart (label, false, false, 5);
 
 			// Optional config widget

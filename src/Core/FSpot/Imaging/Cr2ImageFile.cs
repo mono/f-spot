@@ -38,7 +38,7 @@ using TagLib.IFD.Tags;
 
 namespace FSpot.Imaging
 {
-	class Cr2ImageFile : BaseImageFile
+	internal class Cr2ImageFile : BaseImageFile
 	{
 		uint offset;
 

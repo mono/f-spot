@@ -122,8 +122,8 @@ namespace Hyena.Gui
 
         public static void AdaptGtkRcStyle (Widget adaptee, Type adapter)
         {
-            GLib.GType type = (GLib.GType)adapter;
-            string path = String.Format ("*.{0}", type);
+            var type = (GLib.GType)adapter;
+            string path = $"*.{type}";
             AdaptGtkRcStyle (adaptee, type, path, path);
         }
 

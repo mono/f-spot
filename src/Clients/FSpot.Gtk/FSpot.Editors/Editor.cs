@@ -1,40 +1,17 @@
-//
-// Editor.cs
-//
-// Author:
-//   Ruben Vermeersch <ruben@savanne.be>
-//
 // Copyright (C) 2008-2010 Novell, Inc.
 // Copyright (C) 2008, 2010 Ruben Vermeersch
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
-
+using FSpot.Cms;
 using Hyena;
 
 using FSpot.Core;
 using FSpot.Widgets;
 using FSpot.Imaging;
-
+using FSpot.Models;
 using Gdk;
 using Gtk;
 
@@ -74,7 +51,7 @@ namespace FSpot.Editors
 		// A tool can be applied if it doesn't need a selection, or if it has one.
 		public bool CanBeApplied {
 			get {
-				Log.DebugFormat ("{0} can be applied? {1}", this, !NeedsSelection || (NeedsSelection && State.HasSelection));
+				Log.Debug ($"{this} can be applied? {!NeedsSelection || (NeedsSelection && State.HasSelection)}");
 				return !NeedsSelection || (NeedsSelection && State.HasSelection);
 			}
 		}
@@ -86,11 +63,12 @@ namespace FSpot.Editors
 		}
 
 
-		protected void LoadPhoto (Photo photo, out Pixbuf photo_pixbuf, out Cms.Profile photo_profile) {
+		protected void LoadPhoto (Photo photo, out Pixbuf photoPixbuf, out Cms.Profile photoProfile)
+		{
 			// FIXME: We might get this value from the PhotoImageView.
 			using (var img = App.Instance.Container.Resolve<IImageFileFactory> ().Create (photo.DefaultVersion.Uri)) {
-				photo_pixbuf = img.Load ();
-				photo_profile = img.GetProfile ();
+				photoPixbuf = img.Load ();
+				photoProfile = img.GetProfile ();
 			}
 		}
 
@@ -98,10 +76,10 @@ namespace FSpot.Editors
 		public readonly string Label;
 
 		// The label on the apply button (usually shorter than the label).
-		string apply_label = "";
+		string applyLabel = "";
 		public string ApplyLabel {
-			get { return apply_label == "" ? Label : apply_label; }
-			protected set { apply_label = value; }
+			get { return string.IsNullOrEmpty (applyLabel) ? Label : applyLabel; }
+			protected set { applyLabel = value; }
 		}
 
 
@@ -118,14 +96,10 @@ namespace FSpot.Editors
 		public void Apply ()
 		{
 			try {
-				if (ProcessingStarted != null) {
-					ProcessingStarted (Label, State.Items.Length);
-				}
+				ProcessingStarted?.Invoke (Label, State.Items.Length);
 				TryApply ();
 			} finally {
-				if (ProcessingFinished != null) {
-					ProcessingFinished ();
-				}
+				ProcessingFinished?.Invoke ();
 			}
 		}
 
@@ -137,40 +111,31 @@ namespace FSpot.Editors
 
 			int done = 0;
 			foreach (Photo photo in State.Items) {
-				Pixbuf input;
-				Cms.Profile input_profile;
-				LoadPhoto (photo, out input, out input_profile);
+				LoadPhoto (photo, out var input, out var inputProfile);
 
-				Pixbuf edited = Process (input, input_profile);
+				Pixbuf edited = Process (input, inputProfile);
 				input.Dispose ();
 
-				bool create_version = photo.DefaultVersion.IsProtected;
-				photo.SaveVersion (edited, create_version);
+				bool createVersion = photo.DefaultVersion.Protected;
+				photo.SaveVersion (edited, createVersion);
 				photo.Changes.DataChanged = true;
 				App.Instance.Database.Photos.Commit (photo);
 
 				done++;
-				if (ProcessingStep != null) {
-					ProcessingStep (done);
-				}
+				ProcessingStep?.Invoke (done);
 			}
 
 			Reset ();
 		}
 
-		protected abstract Pixbuf Process (Pixbuf input, Cms.Profile input_profile);
+		protected abstract Pixbuf Process (Pixbuf input, Cms.Profile inputProfile);
 
-		protected virtual Pixbuf ProcessFast (Pixbuf input, Cms.Profile input_profile)
+		protected virtual Pixbuf ProcessFast (Pixbuf input, Cms.Profile inputProfile)
 		{
-			return Process (input, input_profile);
+			return Process (input, inputProfile);
 		}
 
-		bool has_settings;
-		public bool HasSettings
-		{
-			get { return has_settings; }
-			protected set { has_settings = value; }
-		}
+		public bool HasSettings { get; protected set; }
 
 		Pixbuf original;
 		Pixbuf preview;
@@ -188,14 +153,13 @@ namespace FSpot.Editors
 				original = State.PhotoImageView.Pixbuf;
 			}
 
-			Pixbuf old_preview = null;
+			Pixbuf oldPreview = null;
 			if (preview == null) {
-				int width, height;
-				CalcPreviewSize (original, out width, out height);
+				CalcPreviewSize (original, out var width, out var height);
 				preview = original.ScaleSimple (width, height, InterpType.Nearest);
 			} else {
 				// We're updating a previous preview
-				old_preview = State.PhotoImageView.Pixbuf;
+				oldPreview = State.PhotoImageView.Pixbuf;
 			}
 
 			Pixbuf previewed = ProcessFast (preview, null);
@@ -203,9 +167,7 @@ namespace FSpot.Editors
 			State.PhotoImageView.ZoomFit (false);
 			App.Instance.Organizer.InfoBox.UpdateHistogram (previewed);
 
-			if (old_preview != null) {
-				old_preview.Dispose ();
-			}
+			oldPreview?.Dispose ();
 		}
 
 		void CalcPreviewSize (Pixbuf input, out int width, out int height)
@@ -220,12 +182,12 @@ namespace FSpot.Editors
 				width = iwidth;
 				height = iheight;
 			} else {
-				double wratio = (double) iwidth / awidth;
-				double hratio = (double) iheight / aheight;
+				double wratio = (double)iwidth / awidth;
+				double hratio = (double)iheight / aheight;
 
 				double ratio = Math.Max (wratio, hratio);
-				width = (int) (iwidth / ratio);
-				height = (int) (iheight / ratio);
+				width = (int)(iwidth / ratio);
+				height = (int)(iheight / ratio);
 			}
 			//Log.Debug ("Preview size: Allocation: {0}x{1}, Input: {2}x{3}, Result: {4}x{5}", awidth, aheight, iwidth, iheight, width, height);
 		}
@@ -257,7 +219,6 @@ namespace FSpot.Editors
 		{
 			return null;
 		}
-
 
 		public virtual EditorState CreateState ()
 		{

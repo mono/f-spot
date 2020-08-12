@@ -1,38 +1,14 @@
-//
-// GalleryExport.cs
-//
-// Author:
-//   Lorenzo Milesi <maxxer@yetopen.it>
-//   Larry Ewing <lewing@novell.com>
-//   Stephane Delcroix <stephane@delcroix.org>
-//
 // Copyright (C) 2004-2009 Novell, Inc.
 // Copyright (C) 2008 Lorenzo Milesi
 // Copyright (C) 2004-2006 Larry Ewing
 // Copyright (C) 2006-2009 Stephane Delcroix
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Mono.Unix;
 
@@ -43,18 +19,13 @@ using FSpot.Settings;
 using FSpot.Widgets;
 using FSpot.UI.Dialog;
 using FSpot.Extensions;
-
+using FSpot.Models;
 using Hyena;
-using System.Linq;
 
 namespace FSpot.Exporters.Gallery
 {
 	public class GalleryExport : IExporter
 	{
-		public GalleryExport ()
-		{
-		}
-
 		public void Run (IBrowsableCollection selection)
 		{
 			var builder = new GtkBeans.Builder (null, "gallery_export_dialog.ui", null);
@@ -109,17 +80,17 @@ namespace FSpot.Exporters.Gallery
 		public const string BROWSER_KEY = Preferences.ExportKey + EXPORT_SERVICE + "browser";
 		public const string META_KEY = Preferences.ExportKey + EXPORT_SERVICE + "meta";
 		public const string LIGHTTPD_WORKAROUND_KEY = Preferences.ExportKey + EXPORT_SERVICE + "lighttpd_workaround";
-		private bool scale;
-		private int size;
-		private bool browser;
-		private bool meta;
-		private bool connect = false;
+		bool scale;
+		int size;
+		bool browser;
+		bool meta;
+		bool connect = false;
 		IPhoto[] items;
 		int photo_index;
 		ThreadProgressDialog progress_dialog;
 		List<GalleryAccount> accounts;
-		private GalleryAccount account;
-		private Album album;
+		GalleryAccount account;
+		Album album;
 
 		// Widgets
 		[GtkBeans.Builder.Object] Gtk.Dialog export_dialog;
@@ -139,7 +110,7 @@ namespace FSpot.Exporters.Gallery
 
 		System.Threading.Thread command_thread;
 
-		private void HandleResponse (object sender, Gtk.ResponseArgs args)
+		void HandleResponse (object sender, Gtk.ResponseArgs args)
 		{
 			if (args.ResponseId != Gtk.ResponseType.Ok) {
 				export_dialog.Destroy ();
@@ -176,7 +147,7 @@ namespace FSpot.Exporters.Gallery
 			}
 		}
 
-		private void HandleProgressChanged (ProgressItem item)
+		void HandleProgressChanged (ProgressItem item)
 		{
 			//System.Console.WriteLine ("Changed value = {0}", item.Value);
 			progress_dialog.Fraction = (photo_index - 1.0 + item.Value) / (double)items.Length;
@@ -187,7 +158,7 @@ namespace FSpot.Exporters.Gallery
 			size_spin.Sensitive = scale_check.Active;
 		}
 
-		private void Upload ()
+		void Upload ()
 		{
 			account.Gallery.Progress = new ProgressItem ();
 			account.Gallery.Progress.Changed += HandleProgressChanged;
@@ -219,9 +190,7 @@ namespace FSpot.Exporters.Gallery
 					int id = album.Add (item, req.Current.LocalPath);
 
 					if (item != null && item is Photo && App.Instance.Database != null && id != 0)
-							App.Instance.Database.Exports.Create ((item as Photo).Id, (item as Photo).DefaultVersionId,
-										      ExportStore.Gallery2ExportType,
-										      string.Format("{0}:{1}",album.Gallery.Uri, id.ToString ()));
+							App.Instance.Database.Exports.Create ((item as Photo).Id, (uint)(item as Photo).DefaultVersionId, ExportStore.Gallery2ExportType, $"{album.Gallery.Uri}:{id}");
 				} catch (Exception e) {
 					progress_dialog.Message = string.Format (Catalog.GetString ("Error uploading picture \"{0}\" to Gallery: {1}"), item.Name, e.Message);
 					progress_dialog.ProgressText = Catalog.GetString ("Error");
@@ -241,7 +210,7 @@ namespace FSpot.Exporters.Gallery
 				GtkBeans.Global.ShowUri (export_dialog.Screen, album.GetUrl());
 		}
 
-		private void PopulateGalleryOptionMenu (GalleryAccountManager manager, GalleryAccount changed_account)
+		void PopulateGalleryOptionMenu (GalleryAccountManager manager, GalleryAccount changed_account)
 		{
 			this.account = changed_account;
 			int pos = -1;
@@ -268,7 +237,7 @@ namespace FSpot.Exporters.Gallery
 			gallery_optionmenu.Active = pos;
 		}
 
-		private void Connect (GalleryAccount selected = null)
+		void Connect (GalleryAccount selected = null)
 		{
 			try {
 				if (accounts.Count != 0 && connect) {
@@ -298,7 +267,7 @@ namespace FSpot.Exporters.Gallery
 			}
 		}
 
-		private void HandleAccountSelected (object sender, System.EventArgs args)
+		void HandleAccountSelected (object sender, System.EventArgs args)
 		{
 			Connect ();
 		}
@@ -316,7 +285,7 @@ namespace FSpot.Exporters.Gallery
 			}
 		}
 
-		private void PopulateAlbumOptionMenu (Gallery gallery)
+		void PopulateAlbumOptionMenu (Gallery gallery)
 		{
 			List<Album> albums = null;
 			if (gallery != null)

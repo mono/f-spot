@@ -126,7 +126,7 @@ namespace FSpot.Imaging
 			return new Cms.Profile (whitepoint, primaries, transfer);
 		}
 	}*/
-	class DngImageFile : BaseImageFile
+	internal class DngImageFile : BaseImageFile
 	{
 		uint offset;
 

@@ -117,8 +117,8 @@ namespace FSpot.Utils
 #endif
     class SafeDictionary<TKey, TValue> : IDisposable
     {
-        private readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
-        private readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
+	    readonly ReaderWriterLockSlim _padlock = new ReaderWriterLockSlim();
+	    readonly Dictionary<TKey, TValue> _Dictionary = new Dictionary<TKey, TValue>();
 
         public TValue this[TKey key]
         {
@@ -355,7 +355,7 @@ namespace FSpot.Utils
 #endif
     static class TypeExtensions
     {
-        private static SafeDictionary<GenericMethodCacheKey, MethodInfo> _genericMethodCache;
+	    static SafeDictionary<GenericMethodCacheKey, MethodInfo> _genericMethodCache;
 
         static TypeExtensions()
         {
@@ -438,7 +438,7 @@ namespace FSpot.Utils
             return methods.FirstOrDefault();
         }
 #else
-        private static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
+	    static MethodInfo GetMethod(Type sourceType, BindingFlags bindingFlags, string methodName, Type[] genericTypes, Type[] parameterTypes)
         {
 #if GETPARAMETERS_OPEN_GENERICS
             var methods =
@@ -469,17 +469,17 @@ namespace FSpot.Utils
         }
 #endif
 
-        private sealed class GenericMethodCacheKey
+	    sealed class GenericMethodCacheKey
         {
-            private readonly Type _sourceType;
+	        readonly Type _sourceType;
 
-            private readonly string _methodName;
+	        readonly string _methodName;
 
-            private readonly Type[] _genericTypes;
+	        readonly Type[] _genericTypes;
 
-            private readonly Type[] _parameterTypes;
+	        readonly Type[] _parameterTypes;
 
-            private readonly int _hashCode;
+	        readonly int _hashCode;
 
             public GenericMethodCacheKey(Type sourceType, string methodName, Type[] genericTypes, Type[] parameterTypes)
             {
@@ -528,7 +528,7 @@ namespace FSpot.Utils
                 return _hashCode;
             }
 
-            private int GenerateHashCode()
+            int GenerateHashCode()
             {
                 unchecked
                 {
@@ -578,7 +578,7 @@ namespace FSpot.Utils
 #endif
     class TinyIoCResolutionException : Exception
     {
-        private const string ERROR_TEXT = "Unable to resolve type: {0}";
+	    const string ERROR_TEXT = "Unable to resolve type: {0}";
 
         public TinyIoCResolutionException(Type type)
             : base(string.Format(ERROR_TEXT, type.FullName))
@@ -606,7 +606,7 @@ namespace FSpot.Utils
 #endif
     class TinyIoCRegistrationTypeException : Exception
     {
-        private const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
+	    const string REGISTER_ERROR_TEXT = "Cannot register type {0} - abstract classes or interfaces are not valid implementation types for {1}.";
 
         public TinyIoCRegistrationTypeException(Type type, string factory)
             : base(string.Format(REGISTER_ERROR_TEXT, type.FullName, factory))
@@ -634,8 +634,8 @@ namespace FSpot.Utils
 #endif
     class TinyIoCRegistrationException : Exception
     {
-        private const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
-        private const string GENERIC_CONSTRAINT_ERROR_TEXT = "Type {1} is not valid for a registration of type {0}";
+	    const string CONVERT_ERROR_TEXT = "Cannot convert current registration of {0} to {1}";
+	    const string GENERIC_CONSTRAINT_ERROR_TEXT = "Type {1} is not valid for a registration of type {0}";
 
         public TinyIoCRegistrationException(Type type, string method)
             : base(string.Format(CONVERT_ERROR_TEXT, type.FullName, method))
@@ -673,7 +673,7 @@ namespace FSpot.Utils
 #endif
     class TinyIoCWeakReferenceException : Exception
     {
-        private const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
+	    const string ERROR_TEXT = "Unable to instantiate {0} - referenced object has been reclaimed";
 
         public TinyIoCWeakReferenceException(Type type)
             : base(string.Format(ERROR_TEXT, type.FullName))
@@ -701,7 +701,7 @@ namespace FSpot.Utils
 #endif
     class TinyIoCConstructorResolutionException : Exception
     {
-        private const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
+	    const string ERROR_TEXT = "Unable to resolve constructor for {0} using provided Expression.";
 
         public TinyIoCConstructorResolutionException(Type type)
             : base(string.Format(ERROR_TEXT, type.FullName))
@@ -739,7 +739,7 @@ namespace FSpot.Utils
 #endif
     class TinyIoCAutoRegistrationException : Exception
     {
-        private const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
+	    const string ERROR_TEXT = "Duplicate implementation of type {0} found ({1}).";
 
         public TinyIoCAutoRegistrationException(Type registerType, IEnumerable<Type> types)
             : base(string.Format(ERROR_TEXT, registerType, GetTypesString(types)))
@@ -757,7 +757,7 @@ namespace FSpot.Utils
         }
 #endif
 
-        private static string GetTypesString(IEnumerable<Type> types)
+	    static string GetTypesString(IEnumerable<Type> types)
         {
             var typeNames = from type in types
                             select type.FullName;
@@ -792,7 +792,7 @@ namespace FSpot.Utils
         {
         }
 
-        private static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
+        static readonly NamedParameterOverloads _Default = new NamedParameterOverloads();
 
         public static NamedParameterOverloads Default
         {
@@ -864,19 +864,19 @@ namespace FSpot.Utils
 #endif
     sealed class ResolveOptions
     {
-        private static readonly ResolveOptions _Default = new ResolveOptions();
-        private static readonly ResolveOptions _FailUnregisteredAndNameNotFound = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
-        private static readonly ResolveOptions _FailUnregisteredOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
-        private static readonly ResolveOptions _FailNameNotFoundOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve };
+	    static readonly ResolveOptions _Default = new ResolveOptions();
+	    static readonly ResolveOptions _FailUnregisteredAndNameNotFound = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
+	    static readonly ResolveOptions _FailUnregisteredOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.AttemptUnnamedResolution, UnregisteredResolutionAction = UnregisteredResolutionActions.Fail };
+	    static readonly ResolveOptions _FailNameNotFoundOnly = new ResolveOptions() { NamedResolutionFailureAction = NamedResolutionFailureActions.Fail, UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve };
 
-        private UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
+	    UnregisteredResolutionActions _UnregisteredResolutionAction = UnregisteredResolutionActions.AttemptResolve;
         public UnregisteredResolutionActions UnregisteredResolutionAction
         {
             get { return _UnregisteredResolutionAction; }
             set { _UnregisteredResolutionAction = value; }
         }
 
-        private NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
+        NamedResolutionFailureActions _NamedResolutionFailureAction = NamedResolutionFailureActions.Fail;
         public NamedResolutionFailureActions NamedResolutionFailureAction
         {
             get { return _NamedResolutionFailureAction; }
@@ -989,8 +989,8 @@ namespace FSpot.Utils
         /// </summary>
         public sealed class RegisterOptions
         {
-            private TinyIoCContainer _Container;
-            private TypeRegistration _Registration;
+	        TinyIoCContainer _Container;
+	        TypeRegistration _Registration;
 
             public RegisterOptions(TinyIoCContainer container, TypeRegistration registration)
             {
@@ -1116,7 +1116,7 @@ namespace FSpot.Utils
         /// </summary>
         public sealed class MultiRegisterOptions
         {
-            private IEnumerable<RegisterOptions> _RegisterOptions;
+	        IEnumerable<RegisterOptions> _RegisterOptions;
 
             /// <summary>
             /// Initializes a new instance of the MultiRegisterOptions class.
@@ -1177,7 +1177,7 @@ namespace FSpot.Utils
                 return instance;
             }
 
-            private IEnumerable<RegisterOptions> ExecuteOnAllRegisterOptions(Func<RegisterOptions, RegisterOptions> action)
+            IEnumerable<RegisterOptions> ExecuteOnAllRegisterOptions(Func<RegisterOptions, RegisterOptions> action)
             {
                 var newRegisterOptions = new List<RegisterOptions>();
 
@@ -1938,7 +1938,7 @@ namespace FSpot.Utils
         /// <param name="resolveType">Type to resolve</param>
         /// <param name="name">Name of registration</param>
         /// <returns>Bool indicating whether the type can be resolved</returns>
-        private bool CanResolve(Type resolveType, string name)
+        bool CanResolve(Type resolveType, string name)
         {
             return CanResolveInternal(new TypeRegistration(resolveType, name), NamedParameterOverloads.Default, ResolveOptions.Default);
         }
@@ -2606,7 +2606,7 @@ namespace FSpot.Utils
             void ReleaseObject();
         }
 
-        private abstract class ObjectFactoryBase
+        abstract class ObjectFactoryBase
         {
             /// <summary>
             /// Whether to assume this factory sucessfully constructs its objects
@@ -2687,10 +2687,10 @@ namespace FSpot.Utils
         /// <summary>
         /// IObjectFactory that creates new instances of types for each resolution
         /// </summary>
-        private class MultiInstanceFactory : ObjectFactoryBase
+        class MultiInstanceFactory : ObjectFactoryBase
         {
-            private readonly Type registerType;
-            private readonly Type registerImplementation;
+	        readonly Type registerType;
+	        readonly Type registerImplementation;
             public override Type CreatesType { get { return this.registerImplementation; } }
 
             public MultiInstanceFactory(Type registerType, Type registerImplementation)
@@ -2746,11 +2746,11 @@ namespace FSpot.Utils
         /// <summary>
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// </summary>
-        private class DelegateFactory : ObjectFactoryBase
+        class DelegateFactory : ObjectFactoryBase
         {
-            private readonly Type registerType;
+	        readonly Type registerType;
 
-            private Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
+	        Func<TinyIoCContainer, NamedParameterOverloads, object> _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -2804,11 +2804,11 @@ namespace FSpot.Utils
         /// IObjectFactory that invokes a specified delegate to construct the object
         /// Holds the delegate using a weak reference
         /// </summary>
-        private class WeakDelegateFactory : ObjectFactoryBase
+        class WeakDelegateFactory : ObjectFactoryBase
         {
-            private readonly Type registerType;
+	        readonly Type registerType;
 
-            private WeakReference _factory;
+	        WeakReference _factory;
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -2871,11 +2871,11 @@ namespace FSpot.Utils
         /// <summary>
         /// Stores an particular instance to return for a type
         /// </summary>
-        private class InstanceFactory : ObjectFactoryBase, IDisposable
+        class InstanceFactory : ObjectFactoryBase, IDisposable
         {
-            private readonly Type registerType;
-            private readonly Type registerImplementation;
-            private object _instance;
+	        readonly Type registerType;
+	        readonly Type registerImplementation;
+	        object _instance;
 
             public override bool AssumeConstruction { get { return true; } }
 
@@ -2939,11 +2939,11 @@ namespace FSpot.Utils
         /// 
         /// Stores the instance with a weak reference
         /// </summary>
-        private class WeakInstanceFactory : ObjectFactoryBase, IDisposable
+        class WeakInstanceFactory : ObjectFactoryBase, IDisposable
         {
-            private readonly Type registerType;
-            private readonly Type registerImplementation;
-            private readonly WeakReference _instance;
+	        readonly Type registerType;
+	        readonly Type registerImplementation;
+	        readonly WeakReference _instance;
 
             public WeakInstanceFactory(Type registerType, Type registerImplementation, object instance)
             {
@@ -3016,12 +3016,12 @@ namespace FSpot.Utils
         /// <summary>
         /// A factory that lazy instantiates a type and always returns the same instance
         /// </summary>
-        private class SingletonFactory : ObjectFactoryBase, IDisposable
+        class SingletonFactory : ObjectFactoryBase, IDisposable
         {
-            private readonly Type registerType;
-            private readonly Type registerImplementation;
-            private readonly object SingletonLock = new object();
-            private object _Current;
+	        readonly Type registerType;
+	        readonly Type registerImplementation;
+	        readonly object SingletonLock = new object();
+	        object _Current;
 
             public SingletonFactory(Type registerType, Type registerImplementation)
             {
@@ -3101,12 +3101,12 @@ namespace FSpot.Utils
         /// <summary>
         /// A factory that offloads lifetime to an external lifetime provider
         /// </summary>
-        private class CustomObjectLifetimeFactory : ObjectFactoryBase, IDisposable
+        class CustomObjectLifetimeFactory : ObjectFactoryBase, IDisposable
         {
-            private readonly object SingletonLock = new object();
-            private readonly Type registerType;
-            private readonly Type registerImplementation;
-            private readonly ITinyIoCObjectLifetimeProvider _LifetimeProvider;
+	        readonly object SingletonLock = new object();
+	        readonly Type registerType;
+	        readonly Type registerImplementation;
+	        readonly ITinyIoCObjectLifetimeProvider _LifetimeProvider;
 
             public CustomObjectLifetimeFactory(Type registerType, Type registerImplementation, ITinyIoCObjectLifetimeProvider lifetimeProvider, string errorMessage)
             {
@@ -3191,7 +3191,8 @@ namespace FSpot.Utils
 #endregion
 
 #region Singleton Container
-        private static readonly TinyIoCContainer _Current = new TinyIoCContainer();
+
+static readonly TinyIoCContainer _Current = new TinyIoCContainer();
 
         static TinyIoCContainer()
         {
@@ -3212,7 +3213,7 @@ namespace FSpot.Utils
 #region Type Registrations
         public sealed class TypeRegistration
         {
-            private int _hashCode;
+	        int _hashCode;
 
             public Type Type { get; private set; }
             public string Name { get; private set; }
@@ -3251,10 +3252,12 @@ namespace FSpot.Utils
                 return _hashCode;
             }
         }
-        private readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
+
+        readonly SafeDictionary<TypeRegistration, ObjectFactoryBase> _RegisteredTypes;
 #if USE_OBJECT_CONSTRUCTOR
-        private delegate object ObjectConstructor(params object[] parameters);
-        private static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
+	    delegate object ObjectConstructor(params object[] parameters);
+
+	    static readonly SafeDictionary<ConstructorInfo, ObjectConstructor> _ObjectConstructorCache = new SafeDictionary<ConstructorInfo, ObjectConstructor>();
 #endif
 #endregion
 
@@ -3267,7 +3270,8 @@ namespace FSpot.Utils
         }
 
         TinyIoCContainer _Parent;
-        private TinyIoCContainer(TinyIoCContainer parent)
+
+        TinyIoCContainer(TinyIoCContainer parent)
             : this()
         {
             _Parent = parent;
@@ -3275,8 +3279,10 @@ namespace FSpot.Utils
 #endregion
 
 #region Internal Methods
-        private readonly object _AutoRegisterLock = new object();
-        private void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
+
+readonly object _AutoRegisterLock = new object();
+
+void AutoRegisterInternal(IEnumerable<Assembly> assemblies, DuplicateImplementationActions duplicateAction, Func<Type, bool> registrationPredicate)
         {
             lock (_AutoRegisterLock)
             {
@@ -3344,7 +3350,7 @@ namespace FSpot.Utils
             }
         }
 
-        private bool IsIgnoredAssembly(Assembly assembly)
+bool IsIgnoredAssembly(Assembly assembly)
         {
             // TODO - find a better way to remove "system" assemblies from the auto registration
             var ignoreChecks = new List<Func<Assembly, bool>>()
@@ -3368,7 +3374,7 @@ namespace FSpot.Utils
             return false;
         }
 
-        private bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
+bool IsIgnoredType(Type type, Func<Type, bool> registrationPredicate)
         {
             // TODO - find a better way to remove "system" types from the auto registration
             var ignoreChecks = new List<Func<Type, bool>>()
@@ -3396,7 +3402,7 @@ namespace FSpot.Utils
             return false;
         }
 
-        private void RegisterDefaultTypes()
+void RegisterDefaultTypes()
         {
             Register<TinyIoCContainer>(this);
 
@@ -3407,7 +3413,7 @@ namespace FSpot.Utils
 #endif
         }
 
-        private ObjectFactoryBase GetCurrentFactory(TypeRegistration registration)
+ObjectFactoryBase GetCurrentFactory(TypeRegistration registration)
         {
             ObjectFactoryBase current = null;
 
@@ -3416,26 +3422,26 @@ namespace FSpot.Utils
             return current;
         }
 
-        private RegisterOptions RegisterInternal(Type registerType, string name, ObjectFactoryBase factory)
+RegisterOptions RegisterInternal(Type registerType, string name, ObjectFactoryBase factory)
         {
             var typeRegistration = new TypeRegistration(registerType, name);
 
             return AddUpdateRegistration(typeRegistration, factory);
         }
 
-        private RegisterOptions AddUpdateRegistration(TypeRegistration typeRegistration, ObjectFactoryBase factory)
+RegisterOptions AddUpdateRegistration(TypeRegistration typeRegistration, ObjectFactoryBase factory)
         {
             _RegisteredTypes[typeRegistration] = factory;
 
             return new RegisterOptions(this, typeRegistration);
         }
 
-        private bool RemoveRegistration(TypeRegistration typeRegistration)
+bool RemoveRegistration(TypeRegistration typeRegistration)
         {
             return _RegisteredTypes.Remove(typeRegistration);
         }
 
-        private ObjectFactoryBase GetDefaultObjectFactory(Type registerType, Type registerImplementation)
+ObjectFactoryBase GetDefaultObjectFactory(Type registerType, Type registerImplementation)
         {
             //#if NETFX_CORE
             //			if (registerType.GetTypeInfo().IsInterface() || registerType.GetTypeInfo().IsAbstract())
@@ -3447,7 +3453,7 @@ namespace FSpot.Utils
             return new MultiInstanceFactory(registerType, registerImplementation);
         }
 
-        private bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
+bool CanResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3521,7 +3527,7 @@ namespace FSpot.Utils
             return false;
         }
 
-        private bool IsIEnumerableRequest(Type type)
+bool IsIEnumerableRequest(Type type)
         {
             if (!type.IsGenericType())
                 return false;
@@ -3534,7 +3540,7 @@ namespace FSpot.Utils
             return false;
         }
 
-        private bool IsAutomaticLazyFactoryRequest(Type type)
+bool IsAutomaticLazyFactoryRequest(Type type)
         {
             if (!type.IsGenericType())
                 return false;
@@ -3564,7 +3570,7 @@ namespace FSpot.Utils
             return false;
         }
 
-        private ObjectFactoryBase GetParentObjectFactory(TypeRegistration registration)
+ObjectFactoryBase GetParentObjectFactory(TypeRegistration registration)
         {
             if (_Parent == null)
                 return null;
@@ -3578,7 +3584,7 @@ namespace FSpot.Utils
             return _Parent.GetParentObjectFactory(registration);
         }
 
-        private object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
+object ResolveInternal(TypeRegistration registration, NamedParameterOverloads parameters, ResolveOptions options)
         {
             ObjectFactoryBase factory;
 
@@ -3686,7 +3692,7 @@ namespace FSpot.Utils
         }
 
 #if EXPRESSIONS
-        private object GetLazyAutomaticFactoryRequest(Type type)
+	    object GetLazyAutomaticFactoryRequest(Type type)
         {
             if (!type.IsGenericType())
                 return null;
@@ -3766,7 +3772,7 @@ namespace FSpot.Utils
             throw new TinyIoCResolutionException(type);
         }
 #endif
-        private object GetIEnumerableRequest(Type type)
+	    object GetIEnumerableRequest(Type type)
         {
             //#if NETFX_CORE
             //			var genericResolveAllMethod = this.GetType().GetGenericMethod("ResolveAll", type.GenericTypeArguments, new[] { typeof(bool) });
@@ -3777,7 +3783,7 @@ namespace FSpot.Utils
             return genericResolveAllMethod.Invoke(this, new object[] { false });
         }
 
-        private bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
+	    bool CanConstruct(ConstructorInfo ctor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3803,7 +3809,7 @@ namespace FSpot.Utils
             return true;
         }
 
-        private ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options)
+	    ConstructorInfo GetBestConstructor(Type type, NamedParameterOverloads parameters, ResolveOptions options)
         {
             if (parameters == null)
                 throw new ArgumentNullException("parameters");
@@ -3828,7 +3834,7 @@ namespace FSpot.Utils
             return null;
         }
 
-        private IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
+	    IEnumerable<ConstructorInfo> GetTypeConstructors(Type type)
         {
             //#if NETFX_CORE
             //			return type.GetTypeInfo().DeclaredConstructors.OrderByDescending(ctor => ctor.GetParameters().Count());
@@ -3837,22 +3843,22 @@ namespace FSpot.Utils
             //#endif
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
+	    object ConstructType(Type requestedType, Type implementationType, ResolveOptions options)
         {
             return ConstructType(requestedType, implementationType, null, NamedParameterOverloads.Default, options);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, ResolveOptions options)
+	    object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, ResolveOptions options)
         {
             return ConstructType(requestedType, implementationType, constructor, NamedParameterOverloads.Default, options);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, NamedParameterOverloads parameters, ResolveOptions options)
+	    object ConstructType(Type requestedType, Type implementationType, NamedParameterOverloads parameters, ResolveOptions options)
         {
             return ConstructType(requestedType, implementationType, null, parameters, options);
         }
 
-        private object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
+	    object ConstructType(Type requestedType, Type implementationType, ConstructorInfo constructor, NamedParameterOverloads parameters, ResolveOptions options)
         {
             var typeToConstruct = implementationType;
 
@@ -3922,7 +3928,7 @@ namespace FSpot.Utils
         }
 
 #if USE_OBJECT_CONSTRUCTOR
-        private static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
+	    static ObjectConstructor CreateObjectConstructionDelegateWithCache(ConstructorInfo constructor)
         {
             ObjectConstructor objectConstructor;
             if (_ObjectConstructorCache.TryGetValue(constructor, out objectConstructor))
@@ -3954,7 +3960,7 @@ namespace FSpot.Utils
         }
 #endif
 
-        private void BuildUpInternal(object input, ResolveOptions resolveOptions)
+	    void BuildUpInternal(object input, ResolveOptions resolveOptions)
         {
             //#if NETFX_CORE
             //			var properties = from property in input.GetType().GetTypeInfo().DeclaredProperties
@@ -3982,7 +3988,7 @@ namespace FSpot.Utils
             }
         }
 
-        private IEnumerable<TypeRegistration> GetParentRegistrationsForType(Type resolveType)
+	    IEnumerable<TypeRegistration> GetParentRegistrationsForType(Type resolveType)
         {
             if (_Parent == null)
                 return new TypeRegistration[] { };
@@ -3992,7 +3998,7 @@ namespace FSpot.Utils
             return registrations.Concat(_Parent.GetParentRegistrationsForType(resolveType));
         }
 
-        private IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
+	    IEnumerable<object> ResolveAllInternal(Type resolveType, bool includeUnnamed)
         {
             var registrations = _RegisteredTypes.Keys.Where(tr => tr.Type == resolveType).Concat(GetParentRegistrationsForType(resolveType)).Distinct();
 
@@ -4002,7 +4008,7 @@ namespace FSpot.Utils
             return registrations.Select(registration => this.ResolveInternal(registration, NamedParameterOverloads.Default, ResolveOptions.Default));
         }
 
-        private static bool IsValidAssignment(Type registerType, Type registerImplementation)
+	    static bool IsValidAssignment(Type registerType, Type registerImplementation)
         {
             //#if NETFX_CORE
             //			var registerTypeDef = registerType.GetTypeInfo();
@@ -4073,7 +4079,7 @@ namespace FSpot.Utils
 
     // reverse shim for WinRT SR changes...
 #if (!NETFX_CORE && !DOTNET5_4)
-    static class ReverseTypeExtender
+	internal static class ReverseTypeExtender
     {
         public static bool IsClass(this Type type)
         {

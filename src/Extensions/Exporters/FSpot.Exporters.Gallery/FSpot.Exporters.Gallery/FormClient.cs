@@ -47,7 +47,7 @@ namespace FSpot.Exporters.Gallery
 {
 	public class FormClient
 	{
-		private struct FormItem {
+		struct FormItem {
 			public string Name;
 			public object Value;
 	
@@ -56,20 +56,20 @@ namespace FSpot.Exporters.Gallery
 				Value = value;
 			}
 		}
-	
-		private StreamWriter stream_writer;
-		private List<FormItem> Items;
 
-		private string boundary;
-		private string start_boundary;
-		private string end_boundary;
-	
-		private bool multipart = false;
+		StreamWriter stream_writer;
+		List<FormItem> Items;
+
+		string boundary;
+		string start_boundary;
+		string end_boundary;
+
+		bool multipart = false;
 		public bool Multipart {
 			set { multipart = value; }
 		}
-	
-		private bool first_item;
+
+		bool first_item;
 	
 		public bool Buffer = false;
 		public bool SuppressCookiePath = false;
@@ -92,8 +92,8 @@ namespace FSpot.Exporters.Gallery
 			this.Items = new List<FormItem> ();
 			this.Cookies = new CookieContainer ();
 		}
-		
-		private void GenerateBoundary () 
+
+		void GenerateBoundary () 
 		{
 			Guid guid = Guid.NewGuid ();
 			boundary = "--------" + guid.ToString () + "-----";
@@ -111,8 +111,8 @@ namespace FSpot.Exporters.Gallery
 			multipart = true;
 			Items.Add (new FormItem (name, fileinfo));
 		}
-	
-		private void Write (FormItem item) {
+
+		void Write (FormItem item) {
 			// The types we check here need to match the
 			// types we allow in .Add
 	
@@ -126,8 +126,8 @@ namespace FSpot.Exporters.Gallery
 				throw new Exception ("Unknown value type");
 			}
 		}
-	
-		private long MultipartLength (FormItem item) {
+
+		long MultipartLength (FormItem item) {
 			// The types we check here need to match the
 			// types we allow in .Add
 	
@@ -141,22 +141,22 @@ namespace FSpot.Exporters.Gallery
 				throw new Exception ("Unknown value type");
 			}
 		}
-	
-		private string MultipartHeader (string name, string value)
+
+		string MultipartHeader (string name, string value)
 		{
 			return string.Format ("{0}\r\n" + 
 					      "Content-Disposition: form-data; name=\"{1}\"\r\n" +
 					      "\r\n", start_boundary, name);
 		}
-	
-		private long MultipartLength (string name, string value)
+
+		long MultipartLength (string name, string value)
 		{
 			long length = MultipartHeader (name, value).Length;
 			length += Encoding.Default.GetBytes (value).Length + 2;
 			return length;
 		}
-	
-		private void Write (string name, string value) 
+
+		void Write (string name, string value) 
 		{
 			string cmd;
 			
@@ -168,34 +168,32 @@ namespace FSpot.Exporters.Gallery
 				name = HttpUtility.UrlEncode (name.Replace(" ", "+"));
 				value = HttpUtility.UrlEncode (value.Replace(" ", "+"));
 				if (first_item) {
-					cmd = string.Format ("{0}={1}", name, value);
+					cmd = $"{name}={value}";
 					first_item = false;
 				} else {
-					cmd = string.Format ("&{0}={1}", name, value);
+					cmd = $"&{name}={value}";
 				}
 			}
 			//Console.WriteLine (cmd);
 			stream_writer.Write  (cmd);
 		}
-	
-		private string MultipartHeader (string name, FileInfo file)
+
+		string MultipartHeader (string name, FileInfo file)
 		{
-			string cmd = string.Format ("{0}\r\n"
-						    + "Content-Disposition: form-data; name=\"{1}\"; filename=\"{2}\"\r\n"
-						    + "Content-Type: image/jpeg\r\n"
-						    + "\r\n", 
-						    start_boundary, name, file.Name);
+			string cmd = $"{start_boundary}\r\n" +
+			             $"Content-Disposition: form-data; name=\"{name}\"; filename=\"{file.Name}\"\r\n" +
+			             "Content-Type: image/jpeg\r\n" + "\r\n";
 			return cmd;
 		}
-	
-		private long MultipartLength (string name, FileInfo file)
+
+		long MultipartLength (string name, FileInfo file)
 		{
 			long length = MultipartHeader (name, file).Length;
 			length += file.Length + 2;
 			return length;
 		}
-	
-	       	private void Write (string name, FileInfo file)
+
+		void Write (string name, FileInfo file)
 		{
 			if (multipart) {
 				stream_writer.Write (MultipartHeader (name, file));
@@ -221,8 +219,7 @@ namespace FSpot.Exporters.Gallery
 				throw new Exception ("Can't write files in url-encoded submissions");
 			}
 		}
-	
-	
+
 		public void Clear () 
 		{
 			Items.Clear ();

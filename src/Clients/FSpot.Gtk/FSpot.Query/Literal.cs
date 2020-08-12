@@ -1,35 +1,10 @@
-//
-// Literal.cs
-//
-// Author:
-//   Gabriel Burt <gabriel.burt@gmail.com>
-//   Stephane Delcroix <stephane@delcroix.org>
-//   Stephen Shaw <sshaw@decriptor.com>
-//
-// Copyright (C) 2013 Stephen Shaw
+// Copyright (C) 2013-2020 Stephen Shaw
 // Copyright (C) 2007-2009 Novell, Inc.
 // Copyright (C) 2007 Gabriel Burt
 // Copyright (C) 2007-2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
+
 
 // This has to do with Finding photos based on tags
 // http://mail.gnome.org/archives/f-spot-list/2005-November/msg00053.html
@@ -43,7 +18,8 @@ using Mono.Unix;
 using Gtk;
 using Gdk;
 
-using FSpot.Core;
+using FSpot.Models;
+using System.Web;
 
 namespace FSpot.Query
 {
@@ -64,7 +40,6 @@ namespace FSpot.Query
 			FocusedLiterals = new List<Literal> ();
 		}
 
-		#region Properties
 		public static List<Literal> FocusedLiterals { get; set; }
 
 		public Tag Tag {
@@ -91,8 +66,7 @@ namespace FSpot.Query
 				NegatedIcon = null;
 				Update ();
 
-				if (NegatedToggled != null)
-					NegatedToggled (this);
+				NegatedToggled?.Invoke (this);
 			}
 		}
 
@@ -128,7 +102,7 @@ namespace FSpot.Query
 				handle_box = new LiteralBox ();
 				handle_box.BorderWidth = 1;
 
-				label = new Label (System.Web.HttpUtility.HtmlEncode (Tag.Name));
+				label = new Label (HttpUtility.HtmlEncode (Tag.Name));
 				label.UseMarkup = true;
 
 				image = new Gtk.Image (NormalIcon);
@@ -188,10 +162,10 @@ namespace FSpot.Query
 					return normal_icon;
 
 				Pixbuf scaled = null;
-				scaled = Tag.Icon;
+				scaled = Tag.TagIcon.Icon;
 
-				for (Category category = Tag.Category; category != null && scaled == null; category = category.Category) {
-					scaled = category.Icon;
+				for (var category = Tag.Category; category != null && scaled == null; category = category.Category) {
+					scaled = category.TagIcon.Icon;
 				}
 
 				if (scaled == null)
@@ -209,9 +183,7 @@ namespace FSpot.Query
 				normal_icon = null;
 			}
 		}
-		#endregion
 
-		#region Methods
 		public void Update ()
 		{
 			// Clear out the old icons
@@ -219,21 +191,21 @@ namespace FSpot.Query
 			negated_icon = null;
 			if (IsNegated) {
 				widget.TooltipText = string.Format (Catalog.GetString ("Not {0}"), Tag.Name);
-				label.Text = "<s>" + System.Web.HttpUtility.HtmlEncode (Tag.Name) + "</s>";
+				label.Text = $"<s>{HttpUtility.HtmlEncode (Tag.Name)}</s>";
 				image.Pixbuf = NegatedIcon;
 			} else {
 				widget.TooltipText = Tag.Name;
-				label.Text = System.Web.HttpUtility.HtmlEncode (Tag.Name);
+				label.Text = HttpUtility.HtmlEncode (Tag.Name);
 				image.Pixbuf = NormalIcon;
 			}
 
 			label.UseMarkup = true;
 
 			// Show the icon unless it's null
-			if (Tag.Icon == null && container.Children [0] == image) {
+			if (Tag.Icon == null && container.Children[0] == image) {
 				container.Remove (image);
 				container.Add (label);
-			} else if (Tag.Icon != null && container.Children [0] == label) {
+			} else if (Tag.Icon != null && container.Children[0] == label) {
 				container.Remove (label);
 				container.Add (image);
 			}
@@ -250,34 +222,27 @@ namespace FSpot.Query
 
 		public void RemoveSelf ()
 		{
-			if (Removing != null)
-				Removing (this);
+			Removing?.Invoke (this);
 
-			if (Parent != null)
-				Parent.Remove (this);
+			Parent?.Remove (this);
 
-			if (Removed != null)
-				Removed (this);
+			Removed?.Invoke (this);
 		}
 
 		public override string SqlCondition ()
 		{
 			var ids = new StringBuilder (Tag.Id.ToString ());
 
-			var category = Tag as Category;
-			if (category != null) {
+			if (Tag.IsCategory) {
 				var tags = new List<Tag> ();
-				category.AddDescendentsTo (tags);
+				tag.AddDescendentsTo (tags);
 
-                foreach (var t in tags)
-				{
-				    ids.Append (", " + t.Id);
+				foreach (var t in tags) {
+					ids.Append (", " + t.Id);
 				}
 			}
 
-			return string.Format (
-				"id {0}IN (SELECT photo_id FROM photo_tags WHERE tag_id IN ({1}))",
-				(IsNegated ? "NOT " : string.Empty), ids);
+			return $"id {(IsNegated ? "NOT " : string.Empty)}IN (SELECT photo_id FROM photo_tags WHERE tag_id IN ({ids}))";
 		}
 
 		public override Gtk.Widget SeparatorWidget ()
@@ -288,7 +253,7 @@ namespace FSpot.Query
 		static Pixbuf NegatedOverlay {
 			get {
 				if (negated_overlay == null) {
-					System.Reflection.Assembly assembly = System.Reflection.Assembly.GetCallingAssembly ();
+					var assembly = System.Reflection.Assembly.GetCallingAssembly ();
 					negated_overlay = new Pixbuf (assembly.GetManifestResourceStream ("f-spot-not.png"));
 					negated_overlay = negated_overlay.ScaleSimple (overlay_size, overlay_size, InterpType.Bilinear);
 				}
@@ -305,9 +270,7 @@ namespace FSpot.Query
 			foreach (var literal in focusedLiterals)
 				literal.RemoveSelf ();
 		}
-		#endregion
 
-		#region Handlers
 		void KeyHandler (object o, KeyPressEventArgs args)
 		{
 			args.RetVal = false;
@@ -392,10 +355,10 @@ namespace FSpot.Query
 			if (args.Info == DragDropTargets.TagListEntry.Info || args.Info == DragDropTargets.TagQueryEntry.Info) {
 
 				// FIXME: do really write data
-				Byte [] data = Encoding.UTF8.GetBytes (string.Empty);
-				Atom [] targets = args.Context.Targets;
+				byte[] data = Encoding.UTF8.GetBytes (string.Empty);
+				Atom[] targets = args.Context.Targets;
 
-				args.SelectionData.Set (targets [0], 8, data, data.Length);
+				args.SelectionData.Set (targets[0], 8, data, data.Length);
 
 				return;
 			}
@@ -459,15 +422,15 @@ namespace FSpot.Query
 
 		void HandleDragMotion (object o, DragMotionArgs args)
 		{
-		    if (preview)
-                return;
+			if (preview)
+				return;
 
-		    if (preview_widget == null) {
-		        preview_widget = new Gtk.Label (" | ");
-		        box.Add (preview_widget);
-		    }
+			if (preview_widget == null) {
+				preview_widget = new Gtk.Label (" | ");
+				box.Add (preview_widget);
+			}
 
-		    preview_widget.Show ();
+			preview_widget.Show ();
 		}
 
 		void HandleDragLeave (object o, EventArgs args)
@@ -536,11 +499,11 @@ namespace FSpot.Query
 
 		public event RemovedHandler Removed;
 
-		public delegate void TagsAddedHandler (Tag[] tags,Term parent,Literal after);
+		public delegate void TagsAddedHandler (Tag[] tags, Term parent, Literal after);
 
 		public event TagsAddedHandler TagsAdded;
 
-		public delegate void AttachTagHandler (Tag tag,Term parent,Literal after);
+		public delegate void AttachTagHandler (Tag tag, Term parent, Literal after);
 
 		public event AttachTagHandler AttachTag;
 
@@ -552,9 +515,8 @@ namespace FSpot.Query
 
 		public event TagUnRequiredHandler UnRequireTag;
 
-		public delegate void LiteralsMovedHandler (List<Literal> literals,Term parent,Literal after);
+		public delegate void LiteralsMovedHandler (List<Literal> literals, Term parent, Literal after);
 
 		public event LiteralsMovedHandler LiteralsMoved;
-		#endregion
 	}
 }
