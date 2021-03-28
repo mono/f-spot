@@ -9,25 +9,7 @@
 // Copyright (C) 2010 Ruben Vermeersch
 // Copyright (C) 2009-2010 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.IO;
@@ -136,7 +118,7 @@ namespace FSpot
 						try {
 							db.Init (Path.Combine (FSpotConfiguration.BaseDirectory, FSpotConfiguration.DatabaseName), true);
 						} catch (Exception e) {
-							new FSpot.UI.Dialog.RepairDbDialog (e, db.Repair (), null);
+							using var _ = new FSpot.UI.Dialog.RepairDbDialog (e, db.Repair (), null);
 							db.Init (Path.Combine (FSpotConfiguration.BaseDirectory, FSpotConfiguration.DatabaseName), true);
 						}
 					}
@@ -260,7 +242,7 @@ namespace FSpot
                 path = $"gphoto2://[{path.Substring (8)}]";
             }
 
-            Hyena.Log.DebugFormat ("Importing from {0}", path);
+            Hyena.Log.Debug ($"Importing from {path}");
             Organizer.Window.Present ();
             Organizer.ImportFile (path == null ? null : new SafeUri(path));
         }
@@ -293,13 +275,13 @@ namespace FSpot
 			else
 				tag = Database.Tags.GetTagById (Preferences.Get<int> (Preferences.ScreensaverTag));
 
-			IPhoto[] photos;
+			List<Photo> photos;
 			if (tag != null)
-				photos = ObsoletePhotoQueries.Query (new Tag[] {tag});
+				photos = ObsoletePhotoQueries.Query (new Tag[] { tag });
 			else if (Preferences.Get<int> (Preferences.ScreensaverTag) == 0)
-				photos = ObsoletePhotoQueries.Query (new Tag [] {});
+				photos = ObsoletePhotoQueries.Query (Array.Empty<Tag> ());
 			else
-				photos = new IPhoto [0];
+				photos = new List<Photo> ();
 
 			// Minimum delay 1 second; default is 4s
 			var delay = Math.Max (1.0, Preferences.Get<double> (Preferences.ScreensaverDelay));
@@ -308,8 +290,8 @@ namespace FSpot
 			window.ModifyFg (Gtk.StateType.Normal, new Gdk.Color (127, 127, 127));
 			window.ModifyBg (Gtk.StateType.Normal, new Gdk.Color (0, 0, 0));
 
-			if (photos.Length > 0) {
-				Array.Sort (photos, new IPhotoComparer.RandomSort ());
+			if (photos.Count > 0) {
+				photos.Sort (new IPhotoComparer.RandomSort ());
 				slideshow = new FSpot.Widgets.SlideShow (new BrowsablePointer (new PhotoList (photos), 0), (uint)(delay * 1000), true);
 				window.Add (slideshow);
 			} else {

@@ -7,25 +7,7 @@
 // Copyright (C) 2010 Novell, Inc.
 // Copyright (C) 2010 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 
@@ -37,8 +19,10 @@ namespace FSpot.Extensions
 	{
 		public event EventHandler CanSelectChanged;
 
-		// The sidebar onto which this page is attached
 		Widget sidebar;
+		/// <summary>
+		/// The sidebar this page is attached
+		/// </summary>
 		public Widget Sidebar {
 			get => sidebar;
 			set {
@@ -47,10 +31,14 @@ namespace FSpot.Extensions
 			}
 		}
 
-		/// The label of the sidebar page.
+		/// <summary>
+		/// Label of the sidebar page.
+		/// </summary>
 		public string Label { get; }
 
-		/// The icon name, used for the selector
+		/// <summary>
+		/// Icone name used for the selector
+		/// </summary>
 		public string IconName { get; }
 
 		public SidebarPage (Widget widget, string label, string iconName)
@@ -60,20 +48,24 @@ namespace FSpot.Extensions
 			IconName = iconName;
 		}
 
+		/// <summary>
 		/// The widget shown on the sidebar page.
+		/// </summary>
 		public Widget SidebarWidget { get; }
 
 		// Whether this page can be selected
-		bool can_select;
+		bool canSelect;
 		public bool CanSelect {
 			protected set {
-				can_select = value;
+				canSelect = value;
 				CanSelectChanged?.Invoke (this, null);
 			}
-			get { return can_select; }
+			get { return canSelect; }
 		}
 
-		// Can be overriden to get notified as soon as we're added to a sidebar.
+		/// <summary>
+		/// Override to get notified once added to the sidebar.
+		/// </summary>
 		protected virtual void AddedToSidebar () { }
 
 //		// Whether this page is currently visible

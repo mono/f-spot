@@ -7,31 +7,16 @@
 // Copyright (C) 2010 Novell, Inc.
 // Copyright (C) 2010 Mike Gemünde
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
+
 using FSpot.Core;
 using FSpot.Utils;
+
 using Gdk;
+
 using Gtk;
 
 namespace FSpot.Widgets
@@ -69,7 +54,7 @@ namespace FSpot.Widgets
 		{
 			Selection = new SelectionCollection (Collection);
 
-			Selection.DetailedChanged += delegate(IBrowsableCollection sender, Int32[] ids) {
+			Selection.DetailedChanged += delegate (IBrowsableCollection sender, Int32[] ids) {
 				if (ids == null)
 					QueueDraw ();
 				else
@@ -109,9 +94,9 @@ namespace FSpot.Widgets
 			return ret;
 		}
 
-		protected override void DrawCell (int cell_num, Rectangle cell_area, Rectangle expose_area)
+		protected override void DrawCell (int cellNum, Rectangle cellArea, Rectangle exposeArea)
 		{
-			DrawPhoto (cell_num, cell_area, expose_area, Selection.Contains (cell_num), Selection.Contains (cell_num) && FocusCell == cell_num);
+			DrawPhoto (cellNum, cellArea, exposeArea, Selection.Contains (cellNum), Selection.Contains (cellNum) && FocusCell == cellNum);
 		}
 
 		void DrawSelection (Rectangle exposeArea)
@@ -171,7 +156,7 @@ namespace FSpot.Widgets
 			switch (evnt.Type) {
 			case EventType.TwoButtonPress:
 				if (evnt.Button != 1 ||
-				    (evnt.State & (ModifierType.ControlMask | ModifierType.ShiftMask)) != 0)
+					(evnt.State & (ModifierType.ControlMask | ModifierType.ShiftMask)) != 0)
 					return false;
 
 				DoubleClicked?.Invoke (this, new BrowsableEventArgs (cell_num, null));
@@ -335,7 +320,7 @@ namespace FSpot.Widgets
 				if (newVadj < 0)
 					newVadj = 0;
 			} else if ((new_y > Allocation.Height) &&
-			           (newVadj < Vadjustment.Upper - Allocation.Height - deltaVscroll))
+					   (newVadj < Vadjustment.Upper - Allocation.Height - deltaVscroll))
 				newVadj += deltaVscroll;
 			Vadjustment.Value = newVadj;
 
@@ -353,7 +338,7 @@ namespace FSpot.Widgets
 				return false;
 
 			if (!Gtk.Drag.CheckThreshold (this, selection_start.X, selection_start.Y,
-			    (int)evnt.X, (int)evnt.Y))
+				(int)evnt.X, (int)evnt.Y))
 				return false;
 
 			if (isRectSelection) {
@@ -397,7 +382,7 @@ namespace FSpot.Widgets
 						Selection.Clear ();
 
 					start_select_selection = Selection.Ids; // keep initial selection
-					// no rect draw at beginning
+															// no rect draw at beginning
 					rect_select = Rectangle.Zero;
 
 					return false;

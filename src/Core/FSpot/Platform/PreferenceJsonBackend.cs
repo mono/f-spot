@@ -7,23 +7,23 @@
 //
 // Copyright (C) 2008 Novell, Inc.
 // Copyright (C) 2008 Stephane Delcroix
-// Copyright (C) 2019 Stephen Shaw
+// Copyright (C) 2019-2020 Stephen Shaw
 //
 // Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-using System;
+using System.Collections.Generic;
 using System.IO;
 
-using Newtonsoft.Json.Linq;
-
 using FSpot.Settings;
+
+using Newtonsoft.Json.Linq;
 
 namespace FSpot.Platform
 {
 	class PreferenceJsonBackend
 	{
 		internal const string SettingsRoot = "FSpotSettings";
-		internal static string PreferenceLocationOverride = null;
+		internal static string PreferenceLocationOverride;
 
 		static readonly object sync_handler = new object ();
 
@@ -73,17 +73,21 @@ namespace FSpot.Platform
 			if (Client.ContainsKey (key))
 				return Client[key].ToObject<T> ();
 
-			throw new NoSuchKeyException (nameof(key));
+			throw new NoSuchKeyException (nameof (key));
 		}
 
-		internal void Set (string key, object value)
+		internal void Set<T> (string key, T value)
 		{
-			var v = new JValue (value);
+			JToken token;
+			if (value is System.Collections.IEnumerable && !(value is string))
+				token = new JArray (value);
+			else
+				token = new JValue (value);
 
 			if (Client[key] != null)
-				Client[key].Replace (v);
+				Client[key].Replace (token);
 			else
-				Client.Add (key, v);
+				Client.Add (key, token);
 
 			// This isn't ideal, but guarantees settings will be saved for now
 			SaveSettings ();

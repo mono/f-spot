@@ -9,25 +9,7 @@
 // Copyright (C) 2008, 2010 Ruben Vermeersch
 // Copyright (C) 2009 Mike Gemuende
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
 using System;
@@ -446,7 +428,7 @@ namespace FSpot
 
 		public void SaveExpandDefaults ()
 		{
-			List<int> expanded_tags = new List<int> ();
+			var expanded_tags = new List<int> ();
 
 			TreeIter [] iters = ModelIters ();
 			if (iters == null)
@@ -455,13 +437,13 @@ namespace FSpot
 			foreach (TreeIter iter in iters)
 			{
 				if (GetRowExpanded (Model.GetPath (iter))) {
-					GLib.Value v = new GLib.Value ();
+					var v = new GLib.Value ();
 					Model.GetValue (iter, IdColumn, ref v);
 					expanded_tags.Add ((int)(uint) v);
 				}
 			}
 
-			Preferences.Set (Preferences.ExpandedTags, expanded_tags.ToArray ());
+			Preferences.Set (Preferences.ExpandedTags, expanded_tags);
 		}
 
 		public void EditSelectedTagName ()
@@ -701,7 +683,7 @@ namespace FSpot
 				UriList list = args.SelectionData.GetUriListData ();
 
 				database.BeginTransaction ();
-				List<Photo> photos = new List<Photo> ();
+				var photos = new List<Photo> ();
 				foreach (var photo_uri in list) {
 					Photo photo = database.Photos.GetByUri (photo_uri);
 
@@ -713,7 +695,7 @@ namespace FSpot
 					photo.AddTag (new Tag[] {tag});
 					photos.Add (photo);
 				}
-				database.Photos.Commit (photos.ToArray ());
+				database.Photos.Commit (photos);
 				database.CommitTransaction ();
 
 				// FIXME: this need to be done

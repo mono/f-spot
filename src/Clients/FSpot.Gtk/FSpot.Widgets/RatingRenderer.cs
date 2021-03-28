@@ -7,72 +7,50 @@
 // Copyright (C) 2010 Novell, Inc.
 // Copyright (C) 2010 Mike Gemünde
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
-
-using Gdk;
-using Cairo;
-
-using Hyena.Gui;
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using FSpot.Settings;
 using FSpot.Utils;
+
+using Gdk;
+
+using Hyena.Gui;
 
 namespace FSpot.Widgets
 {
 	public class RatingRenderer : Hyena.Gui.RatingRenderer
 	{
-		static readonly int REQUESTED_ICON_SIZE = 16;
+		const int REQUESTED_ICON_SIZE = 16;
 
 		// cache the unscaled pixbufs for all instances
-		static Pixbuf icon_rated;
-		static Pixbuf icon_blank;
-		static Pixbuf icon_hover;
+		static Pixbuf iconRated;
+		static Pixbuf iconBlank;
+		static Pixbuf iconHover;
 
 		protected static Pixbuf IconRated {
 			get {
-				if (icon_rated == null)
-					icon_rated = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-rated",
-													  REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
+				if (iconRated == null)
+					iconRated = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-rated", REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
 
-				return icon_rated;
+				return iconRated;
 			}
 		}
 
 		protected static Pixbuf IconBlank {
 			get {
-				if (icon_blank == null)
-					icon_blank = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-blank",
-													  REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
+				if (iconBlank == null)
+					iconBlank = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-blank", REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
 
-				return icon_blank;
+				return iconBlank;
 			}
 		}
 
 		protected static Pixbuf IconHover {
 			get {
-				if (icon_hover == null)
-					icon_hover = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-rated-gray",
-													  REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
+				if (iconHover == null)
+					iconHover = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "rating-rated-gray", REQUESTED_ICON_SIZE, (Gtk.IconLookupFlags)0);
 
-				return icon_hover;
+				return iconHover;
 			}
 		}
 
@@ -181,7 +159,7 @@ namespace FSpot.Widgets
 		}
 
 		public Pixbuf RenderPixbuf (bool showEmptyStars, bool isHovering, int hoverValue, double fillOpacity,
-		                            double hoverFillOpacity, double strokeOpacity)
+									double hoverFillOpacity, double strokeOpacity)
 		{
 			var pixbuf = new Pixbuf (Colorspace.Rgb, true, 8, MaxRating * Size, Size);
 			pixbuf.Fill (0xffffff00);
@@ -212,9 +190,9 @@ namespace FSpot.Widgets
 			return pixbuf;
 		}
 
-		public override void Render (Cairo.Context cr, Gdk.Rectangle area, Cairo.Color color, bool showEmptyStars,
-		                             bool isHovering, int hoverValue, double fillOpacity, double hoverFillOpacity,
-		                             double strokeOpacity)
+		public override void Render (Cairo.Context cr, Rectangle area, Cairo.Color color, bool showEmptyStars,
+									 bool isHovering, int hoverValue, double fillOpacity, double hoverFillOpacity,
+									 double strokeOpacity)
 		{
 			if (Value == MinRating && !isHovering && !showEmptyStars)
 				return;

@@ -7,25 +7,7 @@
 // Copyright (C) 2009 Novell, Inc.
 // Copyright (C) 2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 /*
  * A Gtk# TreeView that modifies the selection appropriately when you right
@@ -40,66 +22,66 @@
 using System;
 
 using Gdk;
+
 using Gtk;
 
 namespace FSpot.Widgets
 {
 	public class SaneTreeView : TreeView
 	{
-		protected bool row_selected_on_button_down, ignore_button_release, drag_started;
-		
+		protected bool RowSelectedOnButtonDown { get; set; }
+		protected bool IgnoreButtonRelease { get; set; }
+		protected bool DragStarted { get; set; }
+
 		protected SaneTreeView (IntPtr raw) : base (raw) { }
 
 		public SaneTreeView (TreeStore store) : base (store)
 		{
 			Selection.Mode = SelectionMode.Multiple;
 		}
-		
+
 		public TreePath PathAtPoint (double x, double y)
 		{
-			TreePath path_at_pointer = null;
-			GetPathAtPos ((int) x, (int) y, out path_at_pointer);
+			GetPathAtPos ((int)x, (int)y, out var path_at_pointer);
 			return path_at_pointer;
 		}
-		
-		protected override bool OnButtonPressEvent (Gdk.EventButton button)
+
+		protected override bool OnButtonPressEvent (EventButton button)
 		{
 			bool call_parent = true;
 			bool on_expander;
-			drag_started = ignore_button_release = false;
-			TreePath path;
-			TreeViewColumn column;
-			GetPathAtPos ((int)button.X, (int)button.Y, out path, out column);
-			
+			DragStarted = IgnoreButtonRelease = false;
+			GetPathAtPos ((int)button.X, (int)button.Y, out var path, out var column);
+
 			if (button.Window != BinWindow)
 				return false;
-			
+
 			if (path != null) {
 				if (button.Type == EventType.TwoButtonPress) {
-					ActivateRow(path, Columns[0]);
+					ActivateRow (path, Columns[0]);
 					base.OnButtonPressEvent (button);
 				} else {
 					if (button.Button == 3 && Selection.PathIsSelected (path))
 						call_parent = false;
 					else if ((button.Button == 1 || button.Button == 2) &&
 						((button.State & ModifierType.ControlMask) != 0 || (button.State & ModifierType.ShiftMask) == 0)) {
-						int expander_size = (int) StyleGetProperty("expander-size");
-						int horizontal_separator = (int) StyleGetProperty("horizontal-separator");
+						int expander_size = (int)StyleGetProperty ("expander-size");
+						int horizontal_separator = (int)StyleGetProperty ("horizontal-separator");
 						// EXPANDER_EXTRA_PADDING from GtkTreeView
 						expander_size += 4;
 						on_expander = (button.X <= horizontal_separator / 2 + path.Depth * expander_size);
-						row_selected_on_button_down = Selection.PathIsSelected (path);
-						if (row_selected_on_button_down) {
+						RowSelectedOnButtonDown = Selection.PathIsSelected (path);
+						if (RowSelectedOnButtonDown) {
 							call_parent = on_expander;
-							ignore_button_release = call_parent;
+							IgnoreButtonRelease = call_parent;
 						} else if ((button.State & ModifierType.ControlMask) != 0) {
 							call_parent = false;
 							Selection.SelectPath (path);
 						} else {
-							ignore_button_release = on_expander;
+							IgnoreButtonRelease = on_expander;
 						}
 					}
-					
+
 					if (call_parent)
 						base.OnButtonPressEvent (button);
 					else if (Selection.PathIsSelected (path))
@@ -109,34 +91,34 @@ namespace FSpot.Widgets
 				Selection.UnselectAll ();
 				base.OnButtonPressEvent (button);
 			}
-			
+
 			return false;
 		}
-		
-		protected override bool OnButtonReleaseEvent (Gdk.EventButton button)
+
+		protected override bool OnButtonReleaseEvent (EventButton button)
 		{
-			if (!drag_started && !ignore_button_release)
+			if (!DragStarted && !IgnoreButtonRelease)
 				DidNotDrag (button);
-			
+
 			base.OnButtonReleaseEvent (button);
 			return false;
 		}
-		
-		protected override void OnDragBegin (Gdk.DragContext context)
+
+		protected override void OnDragBegin (DragContext context)
 		{
-			drag_started = true;
+			DragStarted = true;
 			base.OnDragBegin (context);
 		}
-		
-		protected void DidNotDrag (Gdk.EventButton button)
+
+		protected void DidNotDrag (EventButton button)
 		{
-			TreePath path = PathAtPoint (button.X, button.Y);
-			
+			using var path = PathAtPoint (button.X, button.Y);
+
 			if (path != null) {
 				if ((button.Button == 1 || button.Button == 2)
 					&& ((button.State & ModifierType.ControlMask) != 0 ||
 					(button.State & ModifierType.ShiftMask) == 0)
-					&& row_selected_on_button_down) {
+					&& RowSelectedOnButtonDown) {
 					if (!ButtonEventModifiesSelection (button)) {
 						Selection.UnselectAll ();
 						Selection.SelectPath (path);
@@ -145,8 +127,8 @@ namespace FSpot.Widgets
 				}
 			}
 		}
-		
-		protected static bool ButtonEventModifiesSelection (Gdk.EventButton button)
+
+		protected static bool ButtonEventModifiesSelection (EventButton button)
 		{
 			return (button.State & (ModifierType.ControlMask | ModifierType.ShiftMask)) != 0;
 		}

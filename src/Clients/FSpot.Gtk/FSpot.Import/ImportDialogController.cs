@@ -51,7 +51,6 @@ namespace FSpot.Import
 
 		static List<ImportSource> ScanSources ()
 		{
-			var monitor = GLib.VolumeMonitor.Default;
 			var sources = new List<ImportSource> ();
 
 			foreach (var drive in DriveInfo.GetDrives ()) {
@@ -59,11 +58,12 @@ namespace FSpot.Import
 				var label = !string.IsNullOrEmpty (drive.VolumeLabel) ? drive.VolumeLabel : "Local Disk";
 				sources.Add (new ImportSource (root, $"{label} ({drive.Name})", null));
 			}
+
 			return sources;
 		}
 
 
-#region Status Reporting
+		#region Status Reporting
 
 		public delegate void ImportProgressHandler (int current, int total);
 		public event ImportProgressHandler ProgressUpdated;
@@ -76,21 +76,16 @@ namespace FSpot.Import
 			ThreadAssist.ProxyToMain (() => { StatusEvent?.Invoke (evnt); });
 		}
 
-		void ReportProgress (int current, int total)
-		{
-			ProgressUpdated?.Invoke (current, total);
-		}
+		#endregion
 
-
-#endregion
-
-#region Source Switching
+		#region Source Switching
 
 		ImportSource activeSource;
 		public ImportSource ActiveSource {
 			set {
 				if (value == activeSource)
 					return;
+
 				activeSource = value;
 
 				CancelScan ();
@@ -103,9 +98,9 @@ namespace FSpot.Import
 			}
 		}
 
-#endregion
+		#endregion
 
-#region Photo Scanning
+		#region Photo Scanning
 
 		Thread scanThread;
 		CancellationTokenSource scanTokenSource;
@@ -113,12 +108,14 @@ namespace FSpot.Import
 		{
 			if (scanThread != null)
 				CancelScan ();
+
 			if (activeSource == null)
 				return;
 
 			var source = activeSource.GetFileImportSource (
 				App.Instance.Container.Resolve<IImageFileFactory> (),
 				App.Instance.Container.Resolve<IFileSystem> ());
+
 			Photos.Clear ();
 
 			scanTokenSource = new CancellationTokenSource ();
@@ -158,9 +155,9 @@ namespace FSpot.Import
 			FireEvent (ImportEvent.PhotoScanFinished);
 		}
 
-#endregion
+		#endregion
 
-#region Importing
+		#region Importing
 
 		Thread importThread;
 		CancellationTokenSource importTokenSource;
@@ -190,23 +187,24 @@ namespace FSpot.Import
 			FireEvent (ImportEvent.ImportStarted);
 
 			var importer = App.Instance.Container.Resolve<IImportController> ();
-			importer.DoImport (App.Instance.Database, Photos, attachTags, Preferences, (current, total) => ThreadAssist.ProxyToMain (() => ReportProgress (current, total)),
-				token);
+			var progress = new Progress<int> (progress => {
+				ProgressUpdated?.Invoke (progress, Photos.Count);
+			});
+			importer.DoImport (App.Instance.Database, Photos, attachTags, Preferences, progress, token);
 
 			PhotosImported = importer.PhotosImported;
 			FailedImports.Clear ();
 			FailedImports.AddRange (importer.FailedImports);
 
-			if (!token.IsCancellationRequested) {
+			if (!token.IsCancellationRequested)
 				importThread = null;
-			}
 
 			FireEvent (ImportEvent.ImportFinished);
 		}
 
-#endregion
+		#endregion
 
-#region Tagging
+		#region Tagging
 
 		readonly List<Tag> attachTags = new List<Tag> ();
 		readonly TagStore tagStore = App.Instance.Database.Tags;
@@ -214,6 +212,9 @@ namespace FSpot.Import
 		// Set the tags that will be added on import.
 		public void AttachTags (IEnumerable<string> tags)
 		{
+			if (tags == null)
+				throw new ArgumentNullException (nameof (tags));
+
 			App.Instance.Database.BeginTransaction ();
 			var importCategory = GetImportedTagsCategory ();
 			foreach (var tagname in tags) {
@@ -237,6 +238,6 @@ namespace FSpot.Import
 			return defaultCategory;
 		}
 
-#endregion
+		#endregion
 	}
 }

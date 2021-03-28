@@ -7,34 +7,17 @@
 // Copyright (C) 2008 Novell, Inc.
 // Copyright (C) 2008 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
 
 namespace FSpot.Core
 {
-	//Track the changes done to a Photo between Commit's
+	/// <summary>
+	/// Track the changes done to a Photo between commits
+	/// </summary>
 	public class PhotoChanges : PhotosChanges
 	{
-
 		public override bool VersionsChanged {
 			get { return VersionsAdded == null && VersionsRemoved == null && VersionsModified == null; }
 		}
@@ -43,14 +26,14 @@ namespace FSpot.Core
 			get { return TagsAdded == null && TagsRemoved == null; }
 		}
 
-		List<Tag> tags_added = null;
-		public Tag [] TagsAdded {
+		List<Tag> tagsAdded;
+		public Tag[] TagsAdded {
 			get {
-				if (tags_added == null)
+				if (tagsAdded == null)
 					return null;
-				if (tags_added.Count == 0)
+				if (tagsAdded.Count == 0)
 					return null;
-				return tags_added.ToArray ();
+				return tagsAdded.ToArray ();
 			}
 			set {
 				foreach (Tag t in value)
@@ -60,22 +43,22 @@ namespace FSpot.Core
 
 		public void AddTag (Tag t)
 		{
-			if (tags_added == null)
-				tags_added = new List<Tag> ();
-			if (tags_removed != null)
-				tags_removed.Remove (t);
-			tags_added.Add (t);
+			if (tagsAdded == null)
+				tagsAdded = new List<Tag> ();
+			if (tagsRemoved != null)
+				tagsRemoved.Remove (t);
+			tagsAdded.Add (t);
 
 		}
 
-		List<Tag> tags_removed = null;
-		public Tag [] TagsRemoved {
+		List<Tag> tagsRemoved;
+		public Tag[] TagsRemoved {
 			get {
-				if (tags_removed == null)
+				if (tagsRemoved == null)
 					return null;
-				if (tags_removed.Count == 0)
+				if (tagsRemoved.Count == 0)
 					return null;
-				return tags_removed.ToArray ();
+				return tagsRemoved.ToArray ();
 			}
 			set {
 				foreach (Tag t in value)
@@ -85,22 +68,21 @@ namespace FSpot.Core
 
 		public void RemoveTag (Tag t)
 		{
-			if (tags_removed == null)
-				tags_removed = new List<Tag> ();
-			if (tags_added != null)
-				tags_added.Remove (t);
-			tags_removed.Add (t);
+			if (tagsRemoved == null)
+				tagsRemoved = new List<Tag> ();
+			if (tagsAdded != null)
+				tagsAdded.Remove (t);
+			tagsRemoved.Add (t);
 		}
 
-
-		List<uint> versions_added = null;
-		public uint [] VersionsAdded {
+		List<uint> versionsAdded;
+		public uint[] VersionsAdded {
 			get {
-				if (versions_added == null)
+				if (versionsAdded == null)
 					return null;
-				if (versions_added.Count == 0)
+				if (versionsAdded.Count == 0)
 					return null;
-				return versions_added.ToArray ();
+				return versionsAdded.ToArray ();
 			}
 			set {
 				foreach (uint u in value)
@@ -110,19 +92,19 @@ namespace FSpot.Core
 
 		public void AddVersion (uint v)
 		{
-			if (versions_added == null)
-				versions_added = new List<uint> ();
-			versions_added.Add (v);
+			if (versionsAdded == null)
+				versionsAdded = new List<uint> ();
+			versionsAdded.Add (v);
 		}
 
-		List<uint> versions_removed = null;
-		public uint [] VersionsRemoved {
+		List<uint> versionsRemoved;
+		public uint[] VersionsRemoved {
 			get {
-				if (versions_removed == null)
+				if (versionsRemoved == null)
 					return null;
-				if (versions_removed.Count == 0)
+				if (versionsRemoved.Count == 0)
 					return null;
-				return versions_removed.ToArray ();
+				return versionsRemoved.ToArray ();
 			}
 			set {
 				foreach (uint u in value)
@@ -132,24 +114,24 @@ namespace FSpot.Core
 
 		public void RemoveVersion (uint v)
 		{
-			if (versions_removed == null)
-				versions_removed= new List<uint> ();
-			if (versions_added != null)
-				versions_added.Remove (v);
-			if (versions_modified != null)
-				versions_modified.Remove (v);
-			versions_removed.Add (v);
+			if (versionsRemoved == null)
+				versionsRemoved = new List<uint> ();
+			if (versionsAdded != null)
+				versionsAdded.Remove (v);
+			if (versionsModified != null)
+				versionsModified.Remove (v);
+			versionsRemoved.Add (v);
 		}
 
 
-		List<uint> versions_modified = null;
-		public uint [] VersionsModified {
+		List<uint> versionsModified;
+		public uint[] VersionsModified {
 			get {
-				if (versions_modified == null)
+				if (versionsModified == null)
 					return null;
-				if (versions_modified.Count == 0)
+				if (versionsModified.Count == 0)
 					return null;
-				return versions_modified.ToArray ();
+				return versionsModified.ToArray ();
 			}
 			set {
 				foreach (uint u in value)
@@ -159,13 +141,13 @@ namespace FSpot.Core
 
 		public void ChangeVersion (uint v)
 		{
-			if (versions_modified == null)
-				versions_modified = new List<uint> ();
-			if (versions_added != null && versions_added.Contains (v))
+			if (versionsModified == null)
+				versionsModified = new List<uint> ();
+			if (versionsAdded != null && versionsAdded.Contains (v))
 				return;
-			if (versions_removed != null && versions_removed.Contains (v))
+			if (versionsRemoved != null && versionsRemoved.Contains (v))
 				return;
-			versions_modified.Add (v);
+			versionsModified.Add (v);
 		}
 	}
 }

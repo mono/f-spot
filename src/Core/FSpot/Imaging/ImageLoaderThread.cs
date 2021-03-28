@@ -11,36 +11,20 @@
 // Copyright (C) 2003-2006 Larry Ewing
 // Copyright (C) 2003 Ettore Perazzoli
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using FSpot.Imaging;
+
 using Gdk;
+
 using Gtk;
+
 using Hyena;
 
 namespace FSpot.Imaging
 {
+	// FIXME, This needs some love
 	public class ImageLoaderThread : IImageLoaderThread
 	{
 		#region Private members.
@@ -55,7 +39,7 @@ namespace FSpot.Imaging
 
 		/* A dict of all the requests; note that the current request
 		   isn't in the dict.  */
-		Dictionary<SafeUri, RequestItem> requests_by_uri;
+		readonly Dictionary<SafeUri, RequestItem> requests_by_uri;
 
 		/* Current request.  Request currently being handled by the
 		   auxiliary thread.  Should be modified only by the auxiliary
@@ -63,7 +47,7 @@ namespace FSpot.Imaging
 		RequestItem current_request;
 
 		/* The queue of processed requests.  */
-		readonly Queue processed_requests;
+		readonly Queue<RequestItem> processed_requests;
 
 		/* This is used by the helper thread to notify the main GLib
 		   thread that there are pending items in the
@@ -88,7 +72,7 @@ namespace FSpot.Imaging
 			queue = new List<RequestItem> ();
 			requests_by_uri = new Dictionary<SafeUri, RequestItem> ();
 			// requests_by_path = Hashtable.Synchronized (new Hashtable ());
-			processed_requests = new Queue ();
+			processed_requests = new Queue<RequestItem> ();
 
 			pending_notify = new ThreadNotify (new Gtk.ReadyEvent (HandleProcessedRequests));
 
@@ -97,9 +81,8 @@ namespace FSpot.Imaging
 
 		void StartWorker ()
 		{
-			if (worker_thread != null) {
+			if (worker_thread != null)
 				return;
-			}
 
 			should_cancel = false;
 			worker_thread = new Thread (new ThreadStart (WorkerThread));
@@ -136,9 +119,8 @@ namespace FSpot.Imaging
 
 		public static void CleanAll ()
 		{
-			foreach (var thread in instances) {
+			foreach (var thread in instances)
 				thread.Cleanup ();
-			}
 		}
 
 		public void Request (SafeUri uri, int order)
@@ -158,7 +140,7 @@ namespace FSpot.Imaging
 		public void Cancel (SafeUri uri)
 		{
 			lock (queue) {
-				RequestItem r = requests_by_uri [uri];
+				RequestItem r = requests_by_uri[uri];
 				if (r != null) {
 					requests_by_uri.Remove (uri);
 					queue.Remove (r);
@@ -173,12 +155,11 @@ namespace FSpot.Imaging
 		{
 			Pixbuf orig_image;
 			try {
-				using (var img = imageFileFactory.Create (request.Uri)) {
-					if (request.Width > 0) {
-						orig_image = img.Load (request.Width, request.Height);
-					} else {
-						orig_image = img.Load ();
-					}
+				using var img = imageFileFactory.Create (request.Uri);
+				if (request.Width > 0) {
+					orig_image = img.Load (request.Width, request.Height);
+				} else {
+					orig_image = img.Load ();
 				}
 			} catch (GLib.GException e) {
 				Log.Exception (e);
@@ -205,12 +186,10 @@ namespace FSpot.Imaging
 				}
 			}
 			/* Check if a request for this path has already been queued.  */
-			RequestItem existing_request;
-			if (requests_by_uri.TryGetValue (uri, out existing_request)) {
+			if (requests_by_uri.TryGetValue (uri, out var existing_request)) {
 				/* FIXME: At least for now, this shouldn't happen.  */
 				if (existing_request.Order != order) {
-					Log.WarningFormat ("BUG: Filing another request of order {0} (previously {1}) for `{2}'",
-						order, existing_request.Order, uri);
+					Log.Warning ($"BUG: Filing another request of order {order} (previously {existing_request.Order}) for `{uri}'");
 				}
 
 				queue.Remove (existing_request);
@@ -239,7 +218,7 @@ namespace FSpot.Imaging
 						if (current_request != null) {
 							processed_requests.Enqueue (current_request);
 
-							if (! pending_notify_notified) {
+							if (!pending_notify_notified) {
 								pending_notify.WakeupMain ();
 								pending_notify_notified = true;
 							}
@@ -260,7 +239,7 @@ namespace FSpot.Imaging
 
 						int pos = queue.Count - 1;
 
-						current_request = queue [pos];
+						current_request = queue[pos];
 						queue.RemoveAt (pos);
 						requests_by_uri.Remove (current_request.Uri);
 					}
@@ -272,7 +251,7 @@ namespace FSpot.Imaging
 			}
 		}
 
-		protected virtual void EmitLoaded (Queue results)
+		protected virtual void EmitLoaded (Queue<RequestItem> results)
 		{
 			if (OnPixbufLoaded != null) {
 				foreach (RequestItem r in results) {
@@ -283,12 +262,12 @@ namespace FSpot.Imaging
 
 		void HandleProcessedRequests ()
 		{
-			Queue results;
+			Queue<RequestItem> results;
 
 			lock (processed_requests) {
 				/* Copy the queued items out of the shared queue so we hold the lock for
 				   as little time as possible.  */
-				results = processed_requests.Clone () as Queue;
+				results = new Queue<RequestItem> (processed_requests);
 				processed_requests.Clear ();
 
 				pending_notify_notified = false;
@@ -296,7 +275,7 @@ namespace FSpot.Imaging
 
 			EmitLoaded (results);
 
-			foreach (RequestItem request in results){
+			foreach (var request in results) {
 				request.Dispose ();
 			}
 		}

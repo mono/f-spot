@@ -28,12 +28,6 @@ namespace FSpot.UI.Dialog
 {
 	public class ImportDialog : BuilderDialog
 	{
-		static readonly string SelectFolderLabel = Catalog.GetString ("Choose Folder...");
-		ImportDialogController Controller { get; set; }
-		TreeStore Sources { get; set; }
-
-		static readonly Dictionary<string, ImportSource> historySources = new Dictionary<string, ImportSource> ();
-
 #pragma warning disable 649
 		[GtkBeans.Builder.Object] Button cancel_button;
 		[GtkBeans.Builder.Object] Button import_button;
@@ -52,8 +46,14 @@ namespace FSpot.UI.Dialog
 		[GtkBeans.Builder.Object] Label attachtags_label;
 #pragma warning restore 649
 
-		PhotoImageView photo_view;
-		TagEntry tag_entry;
+		static readonly string SelectFolderLabel = Catalog.GetString ("Choose Folder...");
+		ImportDialogController Controller { get; set; }
+		TreeStore Sources { get; set; }
+
+		static readonly Dictionary<string, ImportSource> HistorySources = new Dictionary<string, ImportSource> ();
+
+		PhotoImageView photoView;
+		TagEntry tagEntry;
 
 		public ImportDialog (ImportDialogController controller, Window parent) : base ("import.ui", "import_dialog")
 		{
@@ -71,15 +71,15 @@ namespace FSpot.UI.Dialog
 		{
 			WindowPosition = WindowPosition.CenterOnParent;
 
-			photo_view = new PhotoImageView (Controller.Photos);
-			photo_scrolled.Add (photo_view);
+			photoView = new PhotoImageView (Controller.Photos);
+			photo_scrolled.Add (photoView);
 			photo_scrolled.SetSizeRequest (200, 200);
-			photo_view.Show ();
+			photoView.Show ();
 
 			GtkUtil.ModifyColors (photo_scrolled);
-			GtkUtil.ModifyColors (photo_view);
+			GtkUtil.ModifyColors (photoView);
 
-			using var tray = new BrowseablePointerGridView (photo_view.Item) {
+			using var tray = new BrowseablePointerGridView (photoView.Item) {
 				DisplayTags = false
 			};
 			icon_scrolled.Add (tray);
@@ -89,17 +89,17 @@ namespace FSpot.UI.Dialog
 
 			import_button.Sensitive = false;
 
-			tag_entry = new TagEntry (App.Instance.Database.Tags, false);
-			tag_entry.UpdateFromTagNames (new string []{});
-			tagentry_box.Add (tag_entry);
-			tag_entry.Show ();
-			attachtags_label.MnemonicWidget = tag_entry;
+			tagEntry = new TagEntry (App.Instance.Database.Tags, false);
+			tagEntry.UpdateFromTagNames (Array.Empty<string> ());
+			tagentry_box.Add (tagEntry);
+			tagEntry.Show ();
+			attachtags_label.MnemonicWidget = tagEntry;
 		}
 
 		void ResetPreview ()
 		{
-			photo_view.Pixbuf = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "FSpot", 128, 0);
-			photo_view.ZoomFit (false);
+			photoView.Pixbuf = GtkUtil.TryLoadIcon (FSpotConfiguration.IconTheme, "FSpot", 128, 0);
+			photoView.ZoomFit (false);
 		}
 
 		void LoadPreferences ()
@@ -125,9 +125,9 @@ namespace FSpot.UI.Dialog
 		async Task ScanSources ()
 		{
 			// Populates the source combo box
-			Sources = new TreeStore (typeof(ImportSource), typeof(string), typeof(string), typeof(bool));
+			Sources = new TreeStore (typeof (ImportSource), typeof (string), typeof (string), typeof (bool));
 			sources_combo.Model = Sources;
-			sources_combo.RowSeparatorFunc = (m, i) => (m.GetValue (i, 1) as string) == string.Empty;
+			sources_combo.RowSeparatorFunc = (m, i) => string.IsNullOrEmpty ((m.GetValue (i, 1) as string));
 
 			using var render = new CellRendererPixbuf ();
 			sources_combo.PackStart (render, false);
@@ -168,9 +168,9 @@ namespace FSpot.UI.Dialog
 			if (!mountAdded)
 				Sources.AppendValues (null, Catalog.GetString ("(No Cameras Detected)"), string.Empty, false);
 
-			if (historySources.Count > 0) {
+			if (HistorySources.Count > 0) {
 				Sources.AppendValues (null, string.Empty, string.Empty);
-				foreach (var source in historySources.Values) {
+				foreach (var source in HistorySources.Values) {
 					if (source == sourceToActivate)
 						activateIndex = Sources.IterNChildren ();
 
@@ -235,9 +235,9 @@ namespace FSpot.UI.Dialog
 				new FileChooserDialog (Catalog.GetString ("Import"), this,
 				FileChooserAction.SelectFolder, Stock.Cancel, ResponseType.Cancel,
 				Stock.Open, ResponseType.Ok) {
-				SelectMultiple = false,
-				LocalOnly = false
-			};
+					SelectMultiple = false,
+					LocalOnly = false
+				};
 
 			int response = fileChooser.Run ();
 			if ((ResponseType)response == ResponseType.Ok) {
@@ -250,10 +250,10 @@ namespace FSpot.UI.Dialog
 
 		public void SwitchToFolderSource (SafeUri uri)
 		{
-			if (!historySources.TryGetValue (uri, out var source)) {
+			if (!HistorySources.TryGetValue (uri, out var source)) {
 				var name = uri.GetFilename ();
 				source = new ImportSource (uri, name, "folder");
-				historySources[uri] = source;
+				HistorySources[uri] = source;
 			}
 
 			PopulateSourceCombo (source);
@@ -288,33 +288,33 @@ namespace FSpot.UI.Dialog
 			Log.Debug ($"Received controller event: {evnt}");
 
 			switch (evnt) {
-				case ImportEvent.SourceChanged:
-					HideScanSpinner ();
-					ResetPreview ();
-					import_button.Sensitive = true;
-					break;
+			case ImportEvent.SourceChanged:
+				HideScanSpinner ();
+				ResetPreview ();
+				import_button.Sensitive = true;
+				break;
 
-				case ImportEvent.PhotoScanStarted:
-					ShowScanSpinner ();
-					break;
+			case ImportEvent.PhotoScanStarted:
+				ShowScanSpinner ();
+				break;
 
-				case ImportEvent.PhotoScanFinished:
-					HideScanSpinner ();
-					break;
+			case ImportEvent.PhotoScanFinished:
+				HideScanSpinner ();
+				break;
 
-				case ImportEvent.ImportStarted:
-					ShowImportProgress ();
-					break;
+			case ImportEvent.ImportStarted:
+				ShowImportProgress ();
+				break;
 
-				case ImportEvent.ImportFinished:
-					ShowFailuresIfNeeded (Controller.FailedImports);
-					Controller = null;
-					Destroy ();
-					break;
+			case ImportEvent.ImportFinished:
+				ShowFailuresIfNeeded (Controller.FailedImports);
+				Controller = null;
+				Destroy ();
+				break;
 
-				case ImportEvent.ImportError:
-					//FIXME
-					break;
+			case ImportEvent.ImportError:
+				//FIXME
+				break;
 			}
 		}
 
@@ -330,13 +330,15 @@ namespace FSpot.UI.Dialog
 		void OnControllerProgressUpdated (int current, int total)
 		{
 			var importingLabel = Catalog.GetString ("Importing Photos: {0} of {1}...");
-			progress_bar.Text = string.Format (importingLabel, current, total);
-			progress_bar.Fraction = (double)current / Math.Max (total, 1);
+			ThreadAssist.ProxyToMain (() => {
+				progress_bar.Text = string.Format (importingLabel, current, total);
+				progress_bar.Fraction = (double)current / Math.Max (total, 1);
+			});
 		}
 
 		void StartImport ()
 		{
-			Controller.AttachTags (tag_entry.GetTypedTagNames ());
+			Controller.AttachTags (tagEntry.GetTypedTagNames ());
 			Controller.StartImport ();
 			import_button.Sensitive = false;
 			OptionsSensitive = false;
@@ -371,8 +373,7 @@ namespace FSpot.UI.Dialog
 			progress_bar.Hide ();
 		}
 
-		public bool OptionsSensitive
-		{
+		public bool OptionsSensitive {
 			set {
 				sources_combo.Sensitive = value;
 				copy_check.Sensitive = value;

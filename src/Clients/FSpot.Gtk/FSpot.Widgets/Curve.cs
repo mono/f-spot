@@ -7,31 +7,14 @@
 // Copyright (C) 2009 Novell, Inc.
 // Copyright (C) 2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 
-using Gtk;
 using Gdk;
+
+using Gtk;
 
 namespace FSpot.Widgets
 {
@@ -52,53 +35,53 @@ namespace FSpot.Widgets
 
 		public void Reset ()
 		{
-			CurveType old_type = CurveType;
+			CurveType oldType = CurveType;
 			CurveType = CurveType.Spline;
 			ResetVector ();
-			if (old_type != CurveType.Spline)
+			if (oldType != CurveType.Spline)
 				CurveTypeChanged?.Invoke (this, EventArgs.Empty);
 		}
 
-		float min_x = 0f;
+		float minX;
 		public float MinX {
-			get { return min_x; }
-			set { SetRange (value, max_x, min_y, max_y); }
+			get { return minX; }
+			set { SetRange (value, maxX, minY, maxY); }
 		}
 
-		float max_x = 1.0f;
+		float maxX = 1.0f;
 		public float MaxX {
-			get { return max_x; }
-			set { SetRange (min_x, value, min_y, max_y); }
+			get { return maxX; }
+			set { SetRange (minX, value, minY, maxY); }
 		}
 
-		float min_y = 0f;
+		float minY;
 		public float MinY {
-			get { return min_y; }
-			set { SetRange (min_x, max_x, value, max_y); }
+			get { return minY; }
+			set { SetRange (minX, maxX, value, maxY); }
 		}
 
-		float max_y = 1.0f;
+		float maxY = 1.0f;
 		public float MaxY {
-			get { return max_y; }
-			set { SetRange (min_x, max_x, min_y, value); }
+			get { return maxY; }
+			set { SetRange (minX, maxX, minY, value); }
 		}
 
-		public void SetRange (float min_x, float max_x, float min_y, float max_y)
+		public void SetRange (float minX, float maxX, float minY, float maxY)
 		{
-			this.min_x = min_x;
-			this.max_x = max_x;
-			this.min_y = min_y;
-			this.max_y = max_y;
+			this.minX = minX;
+			this.maxX = maxX;
+			this.minY = minY;
+			this.maxY = maxY;
 
 			ResetVector ();
 			QueueDraw ();
 		}
 
-		CurveType curve_type = CurveType.Spline;
+		CurveType curveType = CurveType.Spline;
 		public CurveType CurveType {
-			get { return curve_type; }
+			get { return curveType; }
 			set {
-				curve_type = value;
+				curveType = value;
 				QueueDraw ();
 			}
 		}
@@ -170,12 +153,13 @@ namespace FSpot.Widgets
 		SortedDictionary<float, float> points;
 		void ResetVector ()
 		{
-			points = new SortedDictionary<float, float> ();
-			points.Add (min_x, min_y);
-			points.Add (max_x, max_y);
-			points.Add (.2f, .1f);
-			points.Add (.5f, .5f);
-			points.Add (.8f, .9f);
+			points = new SortedDictionary<float, float> {
+				{ minX, minY },
+				{ maxX, maxY },
+				{ .2f, .1f },
+				{ .5f, .5f },
+				{ .8f, .9f }
+			};
 		}
 #endregion
 
@@ -254,12 +238,12 @@ namespace FSpot.Widgets
 
 #region Gtk widgetry
 		const int radius = 3;		//radius of the control points
-		const int min_distance = 8;	//min distance between control points
-		int x_offset = radius;
-		int y_offset = radius;
+		const int min_distance = 8; //min distance between control points
+		readonly int x_offset = radius;
+		readonly int y_offset = radius;
 		int width, height;		//the real graph
 
-		Pixmap pixmap = null;
+		Pixmap pixmap;
 
 		protected override bool OnConfigureEvent (EventConfigure evnt)
 		{
@@ -341,7 +325,7 @@ namespace FSpot.Widgets
 			requisition.Height = 128 + 2 * y_offset;
 		}
 
-		float? grab_point = null;
+		float? grab_point;
 		protected override bool OnButtonPressEvent (EventButton evnt)
 		{
 			int px = (int)evnt.X - x_offset;
@@ -353,7 +337,7 @@ namespace FSpot.Widgets
 			
 			//find the closest point
 			float closest_x = MinX - 1;
-			var distance = Int32.MaxValue;
+			var distance = int.MaxValue;
 			foreach (var point in points) {
 				int cx = Project (point.Key, MinX, MaxX, width);
 				if (Math.Abs (px - cx) < distance) {
@@ -402,7 +386,7 @@ namespace FSpot.Widgets
 			
 			//find the closest point
 			float closest_x = MinX - 1;
-			var distance = Int32.MaxValue;
+			var distance = int.MaxValue;
 			foreach (var point in points) {
 				int cx = Project (point.Key, MinX, MaxX, width);
 				if (Math.Abs (px - cx) < distance) {

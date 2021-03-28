@@ -9,25 +9,7 @@
 // Copyright (C) 2008-2009 Lorenzo Milesi
 // Copyright (C) 2007-2008 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.IO;
@@ -62,10 +44,11 @@ namespace FSpot.Exporters.Zip
 		[GtkBeans.Builder.Object] Gtk.Button create_button;
 #pragma warning restore 649
 
-		IPhoto [] photos;
+		IPhoto[] photos;
 		Gtk.FileChooserButton uri_chooser;
 
-		public void Run (IBrowsableCollection p) {
+		public void Run (IBrowsableCollection p)
+		{
 			Log.Information ("Executing ZipExport extension");
 			if (p.Count == 0) {
 				HigMessageDialog md = new HigMessageDialog (App.Instance.Organizer.Window, DialogFlags.DestroyWithParent,
@@ -81,7 +64,8 @@ namespace FSpot.Exporters.Zip
 			ShowDialog ();
 		}
 
-		public void ShowDialog () {
+		public void ShowDialog ()
+		{
 			var builder = new GtkBeans.Builder (null, "zip_export.ui", null);
 			builder.Autoconnect (this);
 			zipdiag.Modal = false;
@@ -102,7 +86,8 @@ namespace FSpot.Exporters.Zip
 			zipdiag.ShowAll ();
 		}
 
-		private void on_dialog_response (object sender, ResponseArgs args) {
+		private void on_dialog_response (object sender, ResponseArgs args)
+		{
 			if (args.ResponseId != Gtk.ResponseType.Ok) {
 				// FIXME this is to work around a bug in gtk+ where
 				// the filesystem events are still listened to when
@@ -116,21 +101,22 @@ namespace FSpot.Exporters.Zip
 			zipdiag.Destroy ();
 		}
 
-		void zip () {
+		void zip ()
+		{
 			System.Uri dest = new System.Uri (uri_chooser.Uri);
 			Crc32 crc = new Crc32 ();
 			string filedest = dest.LocalPath + "/" + filename.Text;
-			Log.DebugFormat ("Creating zip file {0}", filedest);
-			ZipOutputStream s = new ZipOutputStream (File.Create(filedest));
+			Log.Debug ($"Creating zip file {filedest}");
+			using var s = new ZipOutputStream (File.Create (filedest));
 			if (scale_check.Active)
-				Log.DebugFormat ("Scaling to {0}", scale_size.ValueAsInt);
+				Log.Debug ($"Scaling to {scale_size.ValueAsInt}");
 
-			ProgressDialog progress_dialog = new ProgressDialog (Catalog.GetString ("Exporting files"),
-							      ProgressDialog.CancelButtonType.Stop,
-							      photos.Length, zipdiag);
+			using var progress_dialog = new ProgressDialog (Catalog.GetString ("Exporting files"),
+								  ProgressDialog.CancelButtonType.Stop,
+								  photos.Length, zipdiag);
 
 			//Pack up
-			for (int i = 0; i < photos.Length; i ++) {
+			for (int i = 0; i < photos.Length; i++) {
 				if (progress_dialog.Update (string.Format (Catalog.GetString ("Preparing photo \"{0}\""), photos[i].Name))) {
 					progress_dialog.Destroy ();
 					return;
@@ -140,18 +126,18 @@ namespace FSpot.Exporters.Zip
 				if (scale_check.Active) {
 					FilterSet filters = new FilterSet ();
 					filters.Add (new JpegFilter ());
-					filters.Add (new ResizeFilter ((uint) scale_size.ValueAsInt));
-					FilterRequest freq = new FilterRequest (photos [i].DefaultVersion.Uri);
+					filters.Add (new ResizeFilter ((uint)scale_size.ValueAsInt));
+					FilterRequest freq = new FilterRequest (photos[i].DefaultVersion.Uri);
 					filters.Convert (freq);
 					f = freq.Current.LocalPath;
 				} else {
-					f = photos [i].DefaultVersion.Uri.LocalPath;
+					f = photos[i].DefaultVersion.Uri.LocalPath;
 				}
 				FileStream fs = File.OpenRead (f);
 
-				byte [] buffer = new byte [fs.Length];
+				byte[] buffer = new byte[fs.Length];
 				fs.Read (buffer, 0, buffer.Length);
-				ZipEntry entry = new ZipEntry (System.IO.Path.GetFileName (photos [i].DefaultVersion.Uri.LocalPath));
+				ZipEntry entry = new ZipEntry (System.IO.Path.GetFileName (photos[i].DefaultVersion.Uri.LocalPath));
 
 				entry.DateTime = DateTime.Now;
 
@@ -174,11 +160,13 @@ namespace FSpot.Exporters.Zip
 
 		}
 
-		private void on_filename_change (object sender, System.EventArgs args) {
+		private void on_filename_change (object sender, System.EventArgs args)
+		{
 			create_button.Sensitive = System.Text.RegularExpressions.Regex.IsMatch (filename.Text, "[.]zip$");
 		}
 
-		private void on_scalecheck_change (object sender, System.EventArgs args) {
+		private void on_scalecheck_change (object sender, System.EventArgs args)
+		{
 			scale_size.Sensitive = scale_check.Active;
 		}
 	}

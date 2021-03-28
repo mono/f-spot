@@ -11,25 +11,7 @@
 // Copyright (C) 2008 Stephane Delcroix
 // Copyright (C) 2006-2007 Larry Ewing
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -42,20 +24,20 @@ namespace FSpot.Utils
 {
 	public class GdkUtils
 	{
-		public static Pixbuf Deserialize (byte [] data)
+		public static Pixbuf Deserialize (byte[] data)
 		{
 			var pixdata = new Pixdata ();
-	
-			pixdata.Deserialize ((uint) data.Length, data);
-	
+
+			pixdata.Deserialize ((uint)data.Length, data);
+
 			return Pixbuf.FromPixdata (pixdata, true);
 		}
-	
-		public static byte [] Serialize (Pixbuf pixbuf)
+
+		public static byte[] Serialize (Pixbuf pixbuf)
 		{
 			var pixdata = new Pixdata ();
-	
-#if true 	//We should use_rle, but bgo#553374 prevents this
+
+#if true   //We should use_rle, but bgo#553374 prevents this
 			pixdata.FromPixbuf (pixbuf, false);
 			return pixdata.Serialize ();
 #else
@@ -67,24 +49,46 @@ namespace FSpot.Utils
 #endif
 		}
 
-		class NativeMethods
+		public class NativeMethods
 		{
-			[DllImport("libgdk-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
+			const string LIBGTK = "libgtk-win32-2.0-0.dll";
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
 			public static extern uint gdk_x11_drawable_get_xid (IntPtr d);
-	
-			[DllImport("libgdk-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
 			public static extern IntPtr gdk_x11_display_get_xdisplay (IntPtr d);
-	
-			[DllImport("libgdk-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
 			public static extern IntPtr gdk_x11_visual_get_xvisual (IntPtr d);
 
 			// FIXME: get rid of this? (Make this cross platform)
-			[DllImport("X11", CallingConvention = CallingConvention.Cdecl)]
-			public static extern uint XVisualIDFromVisual(IntPtr visual);
-	
-			[DllImport("libgdk-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
-			public static extern IntPtr gdk_x11_screen_lookup_visual (IntPtr screen,
-									   uint   xvisualid);
+			[DllImport ("X11", CallingConvention = CallingConvention.Cdecl)]
+			public static extern uint XVisualIDFromVisual (IntPtr visual);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern IntPtr gdk_x11_screen_lookup_visual (IntPtr screen, uint xvisualid);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern bool gdk_screen_is_composited (IntPtr screen);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern bool gdk_x11_screen_supports_net_wm_hint (IntPtr screen, IntPtr property);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern IntPtr gdk_screen_get_rgba_colormap (IntPtr screen);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern IntPtr gdk_screen_get_rgba_visual (IntPtr screen);
+
+			[DllImport ("libgtk-win32-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
+			public static extern void gtk_widget_input_shape_combine_mask (IntPtr raw, IntPtr shape_mask, int offset_x, int offset_y);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern void gdk_property_change (IntPtr window, IntPtr property, IntPtr type, int format, int mode, uint[] data, int nelements);
+
+			[DllImport (LIBGTK, CallingConvention = CallingConvention.Cdecl)]
+			public static extern void gdk_property_change (IntPtr window, IntPtr property, IntPtr type, int format, int mode, byte[] data, int nelements);
 		}
 
 		public static uint GetXid (Drawable d)
@@ -96,12 +100,12 @@ namespace FSpot.Utils
 		{
 			return NativeMethods.XVisualIDFromVisual (GetXVisual (visual));
 		}
-		
+
 		public static IntPtr GetXDisplay (Display display)
 		{
 			return NativeMethods.gdk_x11_display_get_xdisplay (display.Handle);
 		}
-		
+
 		public static IntPtr GetXVisual (Visual v)
 		{
 			return NativeMethods.gdk_x11_visual_get_xvisual (v.Handle);
@@ -109,16 +113,16 @@ namespace FSpot.Utils
 
 		public static Visual LookupVisual (Screen screen, uint visualid)
 		{
-			return (Gdk.Visual) GLib.Object.GetObject (NativeMethods.gdk_x11_screen_lookup_visual (screen.Handle, visualid));
+			return (Gdk.Visual)GLib.Object.GetObject (NativeMethods.gdk_x11_screen_lookup_visual (screen.Handle, visualid));
 		}
-		
-		public static Cursor CreateEmptyCursor (Display display) 
+
+		public static Cursor CreateEmptyCursor (Display display)
 		{
 			try {
-				Gdk.Pixbuf empty = new Gdk.Pixbuf (Gdk.Colorspace.Rgb, true, 8, 1, 1);
+				using var empty = new Gdk.Pixbuf (Gdk.Colorspace.Rgb, true, 8, 1, 1);
 				empty.Fill (0x00000000);
 				return new Gdk.Cursor (display, empty, 0, 0);
-			} catch (Exception e){
+			} catch (Exception e) {
 				Log.Exception (e);
 				return null;
 			}

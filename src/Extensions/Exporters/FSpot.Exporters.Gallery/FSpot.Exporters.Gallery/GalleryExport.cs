@@ -11,25 +11,7 @@
 // Copyright (C) 2004-2006 Larry Ewing
 // Copyright (C) 2006-2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
@@ -157,7 +139,7 @@ namespace FSpot.Exporters.Gallery
 
 			if (account != null) {
 				//System.Console.WriteLine ("history = {0}", album_optionmenu.History);
-				album = account.Gallery.Albums [Math.Max (0, album_optionmenu.Active)];
+				album = account.Gallery.Albums[Math.Max (0, album_optionmenu.Active)];
 				photo_index = 0;
 
 				export_dialog.Destroy ();
@@ -196,14 +178,14 @@ namespace FSpot.Exporters.Gallery
 
 			FilterSet filters = new FilterSet ();
 			if (account.Version == GalleryVersion.Version1)
-				filters.Add (new WhiteListFilter (new string []{".jpg", ".jpeg", ".png", ".gif"}));
+				filters.Add (new WhiteListFilter (new string[] { ".jpg", ".jpeg", ".png", ".gif" }));
 			if (scale)
 				filters.Add (new ResizeFilter ((uint)size));
 
 			while (photo_index < items.Length) {
-				IPhoto item = items [photo_index];
+				IPhoto item = items[photo_index];
 
-				Log.DebugFormat ("uploading {0}", photo_index);
+				Log.Debug ($"uploading {photo_index}");
 
 				progress_dialog.Message = string.Format (Catalog.GetString ("Uploading picture \"{0}\""), item.Name);
 				progress_dialog.Fraction = photo_index / (double)items.Length;
@@ -219,16 +201,16 @@ namespace FSpot.Exporters.Gallery
 					int id = album.Add (item, req.Current.LocalPath);
 
 					if (item != null && item is Photo && App.Instance.Database != null && id != 0)
-							App.Instance.Database.Exports.Create ((item as Photo).Id, (item as Photo).DefaultVersionId,
-										      ExportStore.Gallery2ExportType,
-										      string.Format("{0}:{1}",album.Gallery.Uri, id.ToString ()));
+						App.Instance.Database.Exports.Create ((item as Photo).Id, (item as Photo).DefaultVersionId,
+										  ExportStore.Gallery2ExportType,
+										  string.Format ("{0}:{1}", album.Gallery.Uri, id.ToString ()));
 				} catch (Exception e) {
 					progress_dialog.Message = string.Format (Catalog.GetString ("Error uploading picture \"{0}\" to Gallery: {1}"), item.Name, e.Message);
 					progress_dialog.ProgressText = Catalog.GetString ("Error");
 					Log.Exception (e);
 
 					if (progress_dialog.PerformRetrySkip ())
-							photo_index--;
+						photo_index--;
 				}
 			}
 
@@ -238,7 +220,7 @@ namespace FSpot.Exporters.Gallery
 			progress_dialog.ButtonLabel = Gtk.Stock.Ok;
 
 			if (browser)
-				GtkBeans.Global.ShowUri (export_dialog.Screen, album.GetUrl());
+				GtkBeans.Global.ShowUri (export_dialog.Screen, album.GetUrl ());
 		}
 
 		private void PopulateGalleryOptionMenu (GalleryAccountManager manager, GalleryAccount changed_account)
@@ -273,10 +255,10 @@ namespace FSpot.Exporters.Gallery
 			try {
 				if (accounts.Count != 0 && connect) {
 					if (selected == null)
-					    if (gallery_optionmenu.Active != -1)
-						    account = accounts [gallery_optionmenu.Active];
+						if (gallery_optionmenu.Active != -1)
+							account = accounts[gallery_optionmenu.Active];
 						else
-						    account = accounts [0];
+							account = accounts[0];
 					else
 						account = selected;
 
@@ -305,13 +287,13 @@ namespace FSpot.Exporters.Gallery
 
 		public void HandleAlbumAdded (string title)
 		{
-			GalleryAccount account = accounts [gallery_optionmenu.Active];
+			GalleryAccount account = accounts[gallery_optionmenu.Active];
 			PopulateAlbumOptionMenu (account.Gallery);
 
 			// make the newly created album selected
 			List<Album> albums = account.Gallery.Albums;
-			for (int i=0; i < albums.Count; i++) {
-				if (((Album)albums [i]).Title == title)
+			for (int i = 0; i < albums.Count; i++) {
+				if (((Album)albums[i]).Title == title)
 					album_optionmenu.Active = i;
 			}
 		}
@@ -347,7 +329,7 @@ namespace FSpot.Exporters.Gallery
 				foreach (Album album in albums) {
 					System.Text.StringBuilder label_builder = new System.Text.StringBuilder ();
 
-					for (int i=0; i < album.Parents.Count; i++) {
+					for (int i = 0; i < album.Parents.Count; i++) {
 						label_builder.Append ("  ");
 					}
 					label_builder.Append (album.Title);
