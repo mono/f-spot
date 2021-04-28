@@ -34,11 +34,11 @@
 // This has to do with Finding photos based on tags
 // http://mail.gnome.org/archives/f-spot-list/2005-November/msg00053.html
 // http://bugzilla-attachments.gnome.org/attachment.cgi?id=54566
-using System;
+
 using System.Collections.Generic;
 using System.Text;
 
-using FSpot.Core;
+using FSpot.Models;
 
 using Hyena;
 
@@ -63,7 +63,6 @@ namespace FSpot.Query
 				}
 		}
 
-		#region Properties
 		public bool HasMultiple {
 			get {
 				return (SubTerms.Count > 1);
@@ -79,9 +78,8 @@ namespace FSpot.Query
 		/// last Literal in term, else null
 		/// </value>
 		public Term Last {
-			get
-			{
-			    return SubTerms.Count > 0 ? SubTerms [SubTerms.Count - 1] : null;
+			get {
+				return SubTerms.Count > 0 ? SubTerms[SubTerms.Count - 1] : null;
 			}
 		}
 
@@ -98,8 +96,7 @@ namespace FSpot.Query
 					return;
 
 				// If our parent was already set, remove ourself from it
-				if (parent != null)
-					parent.Remove (this);
+				parent?.Remove (this);
 
 				// Add ourself to our new parent
 				parent = value;
@@ -116,9 +113,7 @@ namespace FSpot.Query
 				is_negated = value;
 			}
 		}
-		#endregion
 
-		#region Methods
 		public void Add (Term term)
 		{
 			SubTerms.Add (term);
@@ -129,8 +124,8 @@ namespace FSpot.Query
 			SubTerms.Remove (term);
 
 			// Remove ourselves if we're now empty
-			if (SubTerms.Count == 0 && Parent != null)
-				Parent.Remove (this);
+			if (SubTerms.Count == 0)
+				Parent?.Remove (this);
 		}
 
 		public void CopyAndInvertSubTermsFrom (Term term, bool recurse)
@@ -146,12 +141,7 @@ namespace FSpot.Query
 			}
 		}
 
-		public List<Term> FindByTag (Tag t)
-		{
-			return FindByTag (t, true);
-		}
-
-		public List<Term> FindByTag (Tag t, bool recursive)
+		public List<Term> FindByTag (Tag t, bool recursive = true)
 		{
 			var results = new List<Term> ();
 
@@ -225,8 +215,7 @@ namespace FSpot.Query
 
 		public bool TagRequired (Tag t)
 		{
-			int count, grouped_with;
-			return TagRequired (t, out count, out grouped_with);
+			return TagRequired (t, out _, out _);
 		}
 
 		public bool TagRequired (Tag t, out int numTerms, out int groupedWith)
@@ -282,7 +271,7 @@ namespace FSpot.Query
 			var condition = new StringBuilder ("(");
 
 			for (int i = 0; i < SubTerms.Count; i++) {
-				Term term = SubTerms [i];
+				Term term = SubTerms[i];
 				condition.Append (term.SqlCondition ());
 
 				if (i != SubTerms.Count - 1)
@@ -316,9 +305,8 @@ namespace FSpot.Query
 			if (OrTerm.Operators.Contains (op))
 				return new OrTerm (parent, after);
 
-			Log.DebugFormat ("Do not have Term for operator {0}", op);
+			Log.Debug ($"Do not have Term for operator {op}");
 			return null;
 		}
-		#endregion
 	}
 }

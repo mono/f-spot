@@ -39,7 +39,7 @@ using TagLib.IFD.Tags;
 
 namespace FSpot.Imaging
 {
-	class NefImageFile : BaseImageFile
+	internal class NefImageFile : BaseImageFile
 	{
 		byte[] jpeg_data;
 

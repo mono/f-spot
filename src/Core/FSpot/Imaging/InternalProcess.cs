@@ -35,7 +35,7 @@ using GLib;
 namespace FSpot.Imaging
 {
 	[Flags]
-	enum InternalProcessFlags
+	internal enum InternalProcessFlags
 	{
 		LeaveDescriptorsOpen =       1 << 0,
 		DoNotReapChild =             1 << 1,
@@ -46,7 +46,7 @@ namespace FSpot.Imaging
 		FileAndArgvZero =            1 << 6
 	}
 
-	class InternalProcess
+	internal class InternalProcess
 	{
 		readonly int stdin;
 		readonly int stdout;

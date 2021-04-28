@@ -44,7 +44,7 @@ namespace FSpot.Imaging {
 
 	// ALL the sample files I have begin with "FUJIFILMCCD-RAW "
 
-	class RafImageFile : BaseImageFile {
+	internal class RafImageFile : BaseImageFile {
 
 		public RafImageFile (SafeUri uri) : base (uri)
 		{

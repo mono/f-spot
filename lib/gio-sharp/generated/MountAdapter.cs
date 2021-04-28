@@ -14,7 +14,7 @@ namespace GLib {
 			this.handle = handle;
 		}
 
-		[DllImport("libgio-2.0", CallingConvention = CallingConvention.Cdecl)]
+		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_type();
 
 		private static GLib.GType _gtype = new GLib.GType (g_mount_get_type ());
@@ -110,7 +110,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_volume(IntPtr raw);
 
-		public GLib.Volume Volume { 
+		public GLib.Volume Volume {
 			get {
 				IntPtr raw_ret = g_mount_get_volume(Handle);
 				GLib.Volume ret = GLib.VolumeAdapter.GetObject (raw_ret, false);
@@ -121,7 +121,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_root(IntPtr raw);
 
-		public GLib.File Root { 
+		public GLib.File Root {
 			get {
 				IntPtr raw_ret = g_mount_get_root(Handle);
 				GLib.File ret = GLib.FileAdapter.GetObject (raw_ret, false);
@@ -132,7 +132,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool g_mount_can_unmount(IntPtr raw);
 
-		public bool CanUnmount { 
+		public bool CanUnmount {
 			get {
 				bool raw_ret = g_mount_can_unmount(Handle);
 				bool ret = raw_ret;
@@ -143,7 +143,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_icon(IntPtr raw);
 
-		public GLib.Icon Icon { 
+		public GLib.Icon Icon {
 			get {
 				IntPtr raw_ret = g_mount_get_icon(Handle);
 				GLib.Icon ret = GLib.IconAdapter.GetObject (raw_ret, false);
@@ -240,7 +240,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_name(IntPtr raw);
 
-		public string Name { 
+		public string Name {
 			get {
 				IntPtr raw_ret = g_mount_get_name(Handle);
 				string ret = GLib.Marshaller.PtrToStringGFree(raw_ret);
@@ -251,7 +251,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_drive(IntPtr raw);
 
-		public GLib.Drive Drive { 
+		public GLib.Drive Drive {
 			get {
 				IntPtr raw_ret = g_mount_get_drive(Handle);
 				GLib.Drive ret = GLib.DriveAdapter.GetObject (raw_ret, false);
@@ -281,7 +281,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr g_mount_get_uuid(IntPtr raw);
 
-		public string Uuid { 
+		public string Uuid {
 			get {
 				IntPtr raw_ret = g_mount_get_uuid(Handle);
 				string ret = GLib.Marshaller.PtrToStringGFree(raw_ret);
@@ -310,7 +310,7 @@ namespace GLib {
 		[DllImport("libgio-2.0-0.dll", CallingConvention = CallingConvention.Cdecl)]
 		static extern bool g_mount_is_shadowed(IntPtr raw);
 
-		public bool IsShadowed { 
+		public bool IsShadowed {
 			get {
 				bool raw_ret = g_mount_is_shadowed(Handle);
 				bool ret = raw_ret;

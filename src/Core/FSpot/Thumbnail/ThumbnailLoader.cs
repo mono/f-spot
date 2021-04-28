@@ -38,7 +38,7 @@ using Hyena;
 
 namespace FSpot.Thumbnail
 {
-	class ThumbnailLoader : ImageLoaderThread, IThumbnailLoader
+	internal class ThumbnailLoader : ImageLoaderThread, IThumbnailLoader
 	{
 		readonly IThumbnailService thumbnailService;
 

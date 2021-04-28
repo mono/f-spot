@@ -30,7 +30,7 @@
 
 namespace FSpot.FileSystem
 {
-	class DotNetFileSystem : IFileSystem
+	internal class DotNetFileSystem : IFileSystem
 	{
 		DotNetFile file;
 		DotNetDirectory directory;

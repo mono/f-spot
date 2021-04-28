@@ -34,6 +34,7 @@
 // This has to do with Finding photos based on tags
 // http://mail.gnome.org/archives/f-spot-list/2005-November/msg00053.html
 // http://bugzilla-attachments.gnome.org/attachment.cgi?id=54566
+
 using System.Collections.Generic;
 using System.Linq;
 
@@ -41,34 +42,35 @@ using Mono.Unix;
 
 using Gtk;
 
-using FSpot.Core;
+using FSpot.Models;
 
 namespace FSpot.Query
 {
 	public class OrTerm : Term
 	{
-		public static List<string> Operators { get; private set; }
+		public static List<string> Operators { get; }
 
 		static OrTerm ()
 		{
-			Operators = new List<string> ();
-			Operators.Add (Catalog.GetString (" or "));
+			Operators = new List<string> {
+				Catalog.GetString (" or ")
+			};
 		}
 
 		public OrTerm (Term parent, Literal after) : base (parent, after)
 		{
 		}
 
-		public static OrTerm FromTags (Tag [] fromTags)
+		public static OrTerm FromTags (IEnumerable<Tag> fromTags)
 		{
-			if (fromTags == null || fromTags.Length == 0)
+			if (fromTags == null || !fromTags.Any())
 				return null;
 
 			var or = new OrTerm (null, null);
-			foreach (Literal l in fromTags.Select(t => new Literal (t)))
-			{
-			    l.Parent = or;
+			foreach (Literal l in fromTags.Select (t => new Literal (t))) {
+				l.Parent = or;
 			}
+
 			return or;
 		}
 
@@ -78,14 +80,13 @@ namespace FSpot.Query
 		{
 			var newme = new AndTerm (Parent, null);
 			newme.CopyAndInvertSubTermsFrom (this, recurse);
-			if (Parent != null)
-				Parent.Remove (this);
+			Parent?.Remove (this);
 			return newme;
 		}
 
 		public override Widget SeparatorWidget ()
 		{
-			Widget label = new Label (" " + OR + " ");
+			Widget label = new Label ($" {OR} ");
 			label.Show ();
 			return label;
 		}

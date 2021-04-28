@@ -1,44 +1,21 @@
-//
-// GalleryRequestHandler.cs
-//
-// Author:
-//   Anton Keks <anton@azib.net>
-//
 // Copyright (C) 2009 Novell, Inc.
 // Copyright (C) 2009 Anton Keks
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.IO;
-using System.Text;
 using System.Reflection;
+using System.Text;
 
-using FSpot;
-using FSpot.Core;
+using FSpot.Models;
+using FSpot.Services;
 
 using Mono.Unix;
 
-namespace FSpot.Tools.LiveWebGallery	
-{	
+namespace FSpot.Tools.LiveWebGallery
+{
 	public abstract class PhotoAwareRequestHandler : RequestHandler
 	{
 		protected string TagsToString (Photo photo) 
@@ -47,6 +24,7 @@ namespace FSpot.Tools.LiveWebGallery
 			foreach (Tag tag in photo.Tags) {
 				tags += ", " + tag.Name;
 			}
+
 			return tags.Length > 1 ? tags.Substring (2) : tags;
 		}
 
@@ -55,8 +33,8 @@ namespace FSpot.Tools.LiveWebGallery
 	public abstract class TemplateRequestHandler : PhotoAwareRequestHandler
 	{
 		protected string template;
-		
-		public TemplateRequestHandler (string name)
+
+		protected TemplateRequestHandler (string name)
 		{
 			template = LoadTemplate (name);
 		}
@@ -71,9 +49,8 @@ namespace FSpot.Tools.LiveWebGallery
 		
 		protected string LoadTemplate (string name)
 		{
-			using (TextReader s = new StreamReader (Assembly.GetCallingAssembly ().GetManifestResourceStream (name))) {
-				return s.ReadToEnd ();
-			}
+			using TextReader s = new StreamReader (Assembly.GetCallingAssembly ().GetManifestResourceStream (name));
+			return s.ReadToEnd ();
 		}
 		
 		protected string Escape (string s) {
@@ -83,47 +60,21 @@ namespace FSpot.Tools.LiveWebGallery
 	}
 	
 	public class GalleryRequestHandler : TemplateRequestHandler, ILiveWebGalleryOptions
-	{			
-		private QueryType query_type = QueryType.ByTag;
-		public QueryType QueryType {
-			get { return query_type; }
-			set { query_type = value; }
-		}
-		
-		private Tag query_tag;
-		public Tag QueryTag {
-			get { return query_tag; }
-			set { query_tag = value; }
-		}
+	{
+		public QueryType QueryType { get; set; } = QueryType.ByTag;
 
-		private bool limit_max_photos = true;
-		public bool LimitMaxPhotos {
-			get { return limit_max_photos; }
-			set { limit_max_photos = value; }
-		}
+		public Tag QueryTag { get; set; }
 
-		private int max_photos = 1000;
-		public int MaxPhotos {
-			get { return max_photos; }
-			set { max_photos = value; }
-		}
-		
-		private bool tagging_allowed = false;
-		public bool TaggingAllowed {
-			get { return tagging_allowed; }
-			set { tagging_allowed = value; }
-		}
+		public bool LimitMaxPhotos { get; set; } = true;
 
-		private Tag editable_tag;
-		public Tag EditableTag {
-			get { return editable_tag; }
-			set { editable_tag = value; }
-		}
+		public int MaxPhotos { get; set; } = 1000;
 
-		private LiveWebGalleryStats stats;
+		public bool TaggingAllowed { get; set; }
+		public Tag EditableTag { get; set; }
+
+		readonly LiveWebGalleryStats stats;
 					
-		public GalleryRequestHandler (LiveWebGalleryStats stats) 
-			: base ("gallery.html") 
+		public GalleryRequestHandler (LiveWebGalleryStats stats) : base ("gallery.html") 
 		{
 			this.stats = stats;
 			template = template.Replace ("TITLE", Catalog.GetString("F-Spot Gallery"));
@@ -135,21 +86,21 @@ namespace FSpot.Tools.LiveWebGallery
 		{
 			Photo[] photos = GetChosenPhotos ();
 			
-			StringBuilder s = new StringBuilder (4096);
+			var s = new StringBuilder (4096);
 			s.Append (template);
-			int num_photos = limit_max_photos ? Math.Min (photos.Length, max_photos) : photos.Length;
+			int num_photos = LimitMaxPhotos ? Math.Min (photos.Length, MaxPhotos) : photos.Length;
 			s.Replace ("NUM_PHOTOS", string.Format(Catalog.GetPluralString("{0} photo", "{0} photos", num_photos), num_photos));
 			s.Replace ("QUERY_TYPE", QueryTypeToString ());
-			s.Replace ("EDITABLE_TAG_NAME", tagging_allowed ? Escape (editable_tag.Name) : "");
+			s.Replace ("EDITABLE_TAG_NAME", TaggingAllowed ? Escape (EditableTag.Name) : "");
 			
 			string photo_template = GetSubTemplate (s, "BEGIN_PHOTO", "END_PHOTO");
-			StringBuilder photos_s = new StringBuilder (4096);
+			var photos_s = new StringBuilder (4096);
 			
 			num_photos = 0;
 			foreach (Photo photo in photos) {
 				photos_s.Append (PreparePhoto (photo_template, photo));
 				
-				if (++num_photos >= max_photos && limit_max_photos)
+				if (++num_photos >= MaxPhotos && LimitMaxPhotos)
 					break;
 			}
 			s.Replace ("END_PHOTO", photos_s.ToString ());
@@ -160,12 +111,12 @@ namespace FSpot.Tools.LiveWebGallery
 			stats.BytesSent += s.Length;
 			stats.GalleryViews++;
 		}
-		
-		private Photo[] GetChosenPhotos () 
+
+		Photo[] GetChosenPhotos () 
 		{
-			switch (query_type) {
+			switch (QueryType) {
 			case QueryType.ByTag:
-				return ObsoletePhotoQueries.Query (new Tag[] {query_tag});
+				return ObsoletePhotoQueries.Query (new [] {QueryTag});
 			case QueryType.CurrentView:
 				return App.Instance.Organizer.Query.Photos;
 			case QueryType.Selected:
@@ -173,21 +124,18 @@ namespace FSpot.Tools.LiveWebGallery
 				return App.Instance.Organizer.SelectedPhotos ();
 			}
 		}
-		
-		private string QueryTypeToString ()
+
+		string QueryTypeToString ()
 		{
-			switch (query_type) {
-			case QueryType.ByTag:
-				return query_tag.Name;
-			case QueryType.CurrentView:
-				return Catalog.GetString ("Current View");
-			case QueryType.Selected:
-			default:
-				return Catalog.GetString ("Selected");
-			}
+			return QueryType switch
+			{
+				QueryType.ByTag => QueryTag.Name,
+				QueryType.CurrentView => Catalog.GetString ("Current View"),
+				_ => Catalog.GetString ("Selected"),
+			};
 		}
-				
-		private string PreparePhoto (string template, Photo photo) 
+
+		string PreparePhoto (string template, Photo photo) 
 		{
 			string photo_s = template.Replace ("PHOTO_ID", photo.Id.ToString ())
 									 .Replace ("PHOTO_NAME", Escape (photo.Name))
@@ -210,7 +158,7 @@ namespace FSpot.Tools.LiveWebGallery
 	
 	public class TagAddRemoveRequestHandler : PhotoAwareRequestHandler
 	{
-		private ILiveWebGalleryOptions options;	
+		readonly ILiveWebGalleryOptions options;	
 		
 		public TagAddRemoveRequestHandler (ILiveWebGalleryOptions options) 
 		{
@@ -227,7 +175,7 @@ namespace FSpot.Tools.LiveWebGallery
 			int slash_pos = requested.IndexOf ('/');
 			requested = requested.Substring (slash_pos + 1);
 			slash_pos = requested.IndexOf ('/');
-			uint photo_id = uint.Parse (requested.Substring (0, slash_pos));
+			var photo_id = Guid.Parse (requested.Substring (0, slash_pos));
 			string tag_name = requested.Substring (slash_pos + 1);
 			
 			if (!options.TaggingAllowed || !options.EditableTag.Name.Equals (tag_name)) {
@@ -237,9 +185,9 @@ namespace FSpot.Tools.LiveWebGallery
 			
 			Photo photo = App.Instance.Database.Photos.Get (photo_id);
 			if (addTag)
-				photo.AddTag (options.EditableTag);
+				TagService.Instance.Add (photo, options.EditableTag);
 			else
-				photo.RemoveTag (options.EditableTag);
+				TagService.Instance.Remove (photo, options.EditableTag);
 			App.Instance.Database.Photos.Commit (photo);
 			
 			SendHeadersAndStartContent (stream, "Content-type: text/plain;charset=UTF-8");

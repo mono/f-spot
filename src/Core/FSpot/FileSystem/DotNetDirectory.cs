@@ -19,7 +19,7 @@ using Hyena;
 
 namespace FSpot.FileSystem
 {
-	class DotNetDirectory : IDirectory
+	internal class DotNetDirectory : IDirectory
 	{
 		public bool Exists (SafeUri uri)
 		{

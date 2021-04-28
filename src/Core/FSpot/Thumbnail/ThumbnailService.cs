@@ -1,54 +1,27 @@
-//
-// ThumbnailService.cs
-//
-// Author:
-//   Daniel Köb <daniel.koeb@peony.at>
-//   Ruben Vermeersch <ruben@savanne.be>
-//
 // Copyright (C) 2016 Daniel Köb
 // Copyright (C) 2010 Novell, Inc.
-// Copyright (C) 2010 Ruben Vermeersch
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.IO;
 using System.Linq;
+
 using FSpot.FileSystem;
 using Gdk;
+
+//using Gdk;
+
 using Hyena;
 
 namespace FSpot.Thumbnail
 {
-	class ThumbnailService : IThumbnailService
+	internal class ThumbnailService : IThumbnailService
 	{
-		#region fields
-
 		readonly IXdgDirectoryService xdgDirectoryService;
 		readonly IThumbnailerFactory thumbnailerFactory;
 		readonly IFileSystem fileSystem;
-
-		#endregion
-
-		#region ctors
 
 		public ThumbnailService (IXdgDirectoryService xdgDirectoryService, IThumbnailerFactory thumbnailerFactory, IFileSystem fileSystem)
 		{
@@ -56,18 +29,14 @@ namespace FSpot.Thumbnail
 			this.thumbnailerFactory = thumbnailerFactory;
 			this.fileSystem = fileSystem;
 
-			var large = new SafeUri(Path.Combine (xdgDirectoryService.GetThumbnailsDir (ThumbnailSize.Large)));
+			var large = new SafeUri (Path.Combine (xdgDirectoryService.GetThumbnailsDir (ThumbnailSize.Large)));
 			if (!fileSystem.Directory.Exists (large))
 				fileSystem.Directory.CreateDirectory (large);
 
-			var normal = new SafeUri(Path.Combine (xdgDirectoryService.GetThumbnailsDir (ThumbnailSize.Normal)));
+			var normal = new SafeUri (Path.Combine (xdgDirectoryService.GetThumbnailsDir (ThumbnailSize.Normal)));
 			if (!fileSystem.Directory.Exists (normal))
 				fileSystem.Directory.CreateDirectory (normal);
 		}
-
-		#endregion
-
-		#region public API
 
 		public Pixbuf GetThumbnail (SafeUri fileUri, ThumbnailSize size)
 		{
@@ -75,9 +44,11 @@ namespace FSpot.Thumbnail
 			var thumbnail = LoadThumbnail (thumbnailUri);
 			if (IsValid (fileUri, thumbnail))
 				return thumbnail;
+
 			IThumbnailer thumbnailer = thumbnailerFactory.GetThumbnailerForUri (fileUri);
 			if (thumbnailer == null)
 				return null;
+
 			return !thumbnailer.TryCreateThumbnail (thumbnailUri, size)
 				? null
 				: LoadThumbnail (thumbnailUri);
@@ -91,7 +62,7 @@ namespace FSpot.Thumbnail
 
 		public void DeleteThumbnails (SafeUri fileUri)
 		{
-			Enum.GetValues (typeof(ThumbnailSize))
+			Enum.GetValues (typeof (ThumbnailSize))
 				.OfType<ThumbnailSize> ()
 				.Select (size => GetThumbnailPath (fileUri, size))
 				.ToList ()
@@ -108,10 +79,6 @@ namespace FSpot.Thumbnail
 					}
 				});
 		}
-
-		#endregion
-
-		#region private implementation
 
 		// internal for unit testing with Moq
 		internal SafeUri GetThumbnailPath (SafeUri fileUri, ThumbnailSize size)
@@ -148,26 +115,24 @@ namespace FSpot.Thumbnail
 		// internal for unit testing with Moq
 		internal bool IsValid (SafeUri uri, Pixbuf pixbuf)
 		{
+			// FIXME
 			if (pixbuf == null)
 				return false;
 
-			if (pixbuf.GetOption (ThumbUriOpt) != uri.ToString ())
+			if (pixbuf.GetOption (ThumbUriOpt) != uri.ToString())
 				return false;
 
-			if (!fileSystem.File.Exists (uri))
+			if (!fileSystem.File.Exists(uri))
 				return false;
 
 			var mTime = fileSystem.File.GetMTime (uri);
-			return pixbuf.GetOption (ThumbMTimeOpt) == mTime.ToString ();
+			return pixbuf.GetOption(ThumbMTimeOpt) == mTime.ToString();
 		}
 
 		Pixbuf LoadPng (SafeUri uri)
 		{
-			using (var stream = fileSystem.File.Read (uri)) {
-				return new Pixbuf (stream);
-			}
+			using var stream = fileSystem.File.Read (uri);
+			return new Pixbuf (stream);
 		}
-
-		#endregion
 	}
 }

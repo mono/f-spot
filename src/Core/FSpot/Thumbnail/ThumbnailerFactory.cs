@@ -32,7 +32,7 @@ using Hyena;
 
 namespace FSpot.Thumbnail
 {
-	class ThumbnailerFactory : IThumbnailerFactory
+	internal class ThumbnailerFactory : IThumbnailerFactory
 	{
 		readonly IImageFileFactory factory;
 		readonly IFileSystem fileSystem;

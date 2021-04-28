@@ -1,82 +1,57 @@
-//
-// FlickrExport.cs
-//
-// Author:
-//   Lorenzo Milesi <maxxer@yetopen.it>
-//   Stephane Delcroix <stephane@delcroix.org>
-//   Stephen Shaw <sshaw@decriptor.com>
-//
 // Copyright (C) 2008-2009 Novell, Inc.
 // Copyright (C) 2008-2009 Lorenzo Milesi
 // Copyright (C) 2008-2009 Stephane Delcroix
+// Copyright (C) 2020 Stephen Shaw
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
-using Mono.Unix;
-
 using FlickrNet;
-
-using Gtk;
 
 using FSpot.Core;
 using FSpot.Database;
 using FSpot.Filters;
 using FSpot.Settings;
-using FSpot.Widgets;
 using FSpot.UI.Dialog;
+using FSpot.Widgets;
+
+using Gtk;
 
 using Hyena;
 using Hyena.Widgets;
-using System.Linq;
+
+using Mono.Unix;
 
 
 namespace FSpot.Exporters.Flickr
 {
-    public class FlickrExport : Extensions.IExporter
-    {
+	public class FlickrExport : Extensions.IExporter
+	{
 		IBrowsableCollection selection;
 
 #pragma warning disable 649
-		[GtkBeans.Builder.Object] Gtk.Dialog         dialog;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    scale_check;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    tag_check;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    hierarchy_check;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    ignore_top_level_check;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    open_check;
-		[GtkBeans.Builder.Object] Gtk.SpinButton     size_spin;
+		[GtkBeans.Builder.Object] Gtk.Dialog dialog;
+		[GtkBeans.Builder.Object] Gtk.CheckButton scale_check;
+		[GtkBeans.Builder.Object] Gtk.CheckButton tag_check;
+		[GtkBeans.Builder.Object] Gtk.CheckButton hierarchy_check;
+		[GtkBeans.Builder.Object] Gtk.CheckButton ignore_top_level_check;
+		[GtkBeans.Builder.Object] Gtk.CheckButton open_check;
+		[GtkBeans.Builder.Object] Gtk.SpinButton size_spin;
 		[GtkBeans.Builder.Object] Gtk.ScrolledWindow thumb_scrolledwindow;
-		[GtkBeans.Builder.Object] Entry              oauth_verification_code;
-		[GtkBeans.Builder.Object] Gtk.Button         auth_flickr;
-		[GtkBeans.Builder.Object] Gtk.ProgressBar    used_bandwidth;
-		[GtkBeans.Builder.Object] Gtk.Button         do_export_flickr;
-		[GtkBeans.Builder.Object] Gtk.Label          auth_label;
-		[GtkBeans.Builder.Object] Gtk.RadioButton    public_radio;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    family_check;
-		[GtkBeans.Builder.Object] Gtk.CheckButton    friend_check;
+		[GtkBeans.Builder.Object] Entry oauth_verification_code;
+		[GtkBeans.Builder.Object] Gtk.Button auth_flickr;
+		[GtkBeans.Builder.Object] Gtk.ProgressBar used_bandwidth;
+		[GtkBeans.Builder.Object] Gtk.Button do_export_flickr;
+		[GtkBeans.Builder.Object] Gtk.Label auth_label;
+		[GtkBeans.Builder.Object] Gtk.RadioButton public_radio;
+		[GtkBeans.Builder.Object] Gtk.CheckButton family_check;
+		[GtkBeans.Builder.Object] Gtk.CheckButton friend_check;
 #pragma warning restore 649
 
 		GtkBeans.Builder builder;
@@ -114,7 +89,8 @@ namespace FSpot.Exporters.Flickr
 		string auth_text;
 		State state;
 
-		enum State {
+		enum State
+		{
 			// not connected to flickr at all
 			Disconnected,
 			// Got the request token, opened the browser, waiting for verification code from the end user
@@ -165,13 +141,13 @@ namespace FSpot.Exporters.Flickr
 										token.Username,
 										current_service.Name);
 					auth_flickr.Label = string.Format (Catalog.GetString ("Sign in as a different user"));
-					used_bandwidth.Visible = !fr.Connection.PeopleGetUploadStatus().IsPro &&
-									fr.Connection.PeopleGetUploadStatus().BandwidthMax > 0;
+					used_bandwidth.Visible = !fr.Connection.PeopleGetUploadStatus ().IsPro &&
+									fr.Connection.PeopleGetUploadStatus ().BandwidthMax > 0;
 					if (used_bandwidth.Visible) {
-						used_bandwidth.Fraction = fr.Connection.PeopleGetUploadStatus().PercentageUsed;
-						used_bandwidth.Text = string.Format (Catalog.GetString("Used {0} of your allowed {1} monthly quota"),
-									GLib.Format.SizeForDisplay (fr.Connection.PeopleGetUploadStatus().BandwidthUsed),
-									GLib.Format.SizeForDisplay (fr.Connection.PeopleGetUploadStatus().BandwidthMax));
+						used_bandwidth.Fraction = fr.Connection.PeopleGetUploadStatus ().PercentageUsed;
+						used_bandwidth.Text = string.Format (Catalog.GetString ("Used {0} of your allowed {1} monthly quota"),
+									GLib.Format.SizeForDisplay (fr.Connection.PeopleGetUploadStatus ().BandwidthUsed),
+									GLib.Format.SizeForDisplay (fr.Connection.PeopleGetUploadStatus ().BandwidthMax));
 					}
 					break;
 				}
@@ -243,7 +219,7 @@ namespace FSpot.Exporters.Flickr
 
 			do_export_flickr.Sensitive = false;
 			fr = new FlickrRemote (token, current_service);
-			if (token != null ) {
+			if (token != null) {
 				StartAuth ();
 			}
 		}
@@ -251,8 +227,8 @@ namespace FSpot.Exporters.Flickr
 		public bool StartAuth ()
 		{
 			CurrentState = State.InAuth;
-			if (command_thread == null || ! command_thread.IsAlive) {
-				command_thread = new Thread (new ThreadStart (CheckAuthorization));
+			if (command_thread == null || !command_thread.IsAlive) {
+				command_thread = new Thread (CheckAuthorization);
 				command_thread.Start ();
 			}
 			return true;
@@ -268,10 +244,10 @@ namespace FSpot.Exporters.Flickr
 			} catch (Exception e) {
 				var md =
 					new HigMessageDialog (Dialog,
-							      Gtk.DialogFlags.Modal |
-							      Gtk.DialogFlags.DestroyWithParent,
-							      Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
-							      Catalog.GetString ("Unable to log on"), e.Message);
+								  Gtk.DialogFlags.Modal |
+								  Gtk.DialogFlags.DestroyWithParent,
+								  Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
+								  Catalog.GetString ("Unable to log on"), e.Message);
 
 				md.Run ();
 				md.Destroy ();
@@ -293,20 +269,11 @@ namespace FSpot.Exporters.Flickr
 		}
 
 		class AuthorizationEventArgs : EventArgs
-        {
-			Exception e;
-			Auth auth;
+		{
+			public Exception Exception { get; set; }
 
-			public Exception Exception {
-				get { return e; }
-				set { e = value; }
-			}
-
-			public Auth Auth {
-				get { return auth; }
-				set { auth = value; }
-			}
-        }
+			public Auth Auth { get; set; }
+		}
 
 		public void HandleSizeActive (object sender, EventArgs args)
 		{
@@ -325,7 +292,7 @@ namespace FSpot.Exporters.Flickr
 		{
 			try {
 				fr = new FlickrRemote (token, current_service);
-				fr.TryWebLogin();
+				fr.TryWebLogin ();
 				CurrentState = State.Connected;
 			} catch (Exception e) {
 				if (e is FlickrApiException && (e as FlickrApiException).Code == 98) {
@@ -334,10 +301,10 @@ namespace FSpot.Exporters.Flickr
 				} else {
 					var md =
 						new HigMessageDialog (Dialog,
-								      Gtk.DialogFlags.Modal |
-								      Gtk.DialogFlags.DestroyWithParent,
-								      Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
-								      Catalog.GetString ("Unable to log on"), e.Message);
+									  Gtk.DialogFlags.Modal |
+									  Gtk.DialogFlags.DestroyWithParent,
+									  Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
+									  Catalog.GetString ("Unable to log on"), e.Message);
 
 					md.Run ();
 					md.Destroy ();
@@ -349,49 +316,47 @@ namespace FSpot.Exporters.Flickr
 		void HandleProgressChanged (ProgressItem item)
 		{
 			//System.Console.WriteLine ("Changed value = {0}", item.Value);
-			progress_dialog.Fraction = (photo_index - 1.0 + item.Value) / (double) selection.Count;
+			progress_dialog.Fraction = (photo_index - 1.0 + item.Value) / (double)selection.Count;
 		}
 
 		FileInfo info;
 		void HandleFlickrProgress (object sender, UploadProgressEventArgs args)
 		{
 			if (args.UploadComplete) {
-				progress_dialog.Fraction = photo_index / (double) selection.Count;
-				progress_dialog.ProgressText = string.Format (Catalog.GetString ("Waiting for response {0} of {1}"),
-									      photo_index, selection.Count);
+				progress_dialog.Fraction = photo_index / (double)selection.Count;
+				progress_dialog.ProgressText = string.Format (Catalog.GetString ("Waiting for response {0} of {1}"), photo_index, selection.Count);
 			}
-            progress_dialog.Fraction = (photo_index - 1.0 + (args.BytesSent / (double) info.Length)) / (double) selection.Count;
+
+			progress_dialog.Fraction = (photo_index - 1.0 + (args.BytesSent / (double)info.Length)) / (double)selection.Count;
 		}
 
 		class DateComparer : IComparer
 		{
 			public int Compare (object left, object right)
 			{
-				return DateTime.Compare ((left as IPhoto).Time, (right as IPhoto).Time);
+				return DateTime.Compare ((left as IPhoto).UtcTime, (right as IPhoto).UtcTime);
 			}
 		}
 
 		void Upload ()
-        {
+		{
 			progress_item = new ProgressItem ();
 			progress_item.Changed += HandleProgressChanged;
 			fr.Connection.OnUploadProgress += HandleFlickrProgress;
 
 			var ids = new List<string> ();
-			IPhoto [] photos = selection.Items.ToArray ();
+			IPhoto[] photos = selection.Items.ToArray ();
 			Array.Sort (photos, new DateComparer ());
 
 			for (int index = 0; index < photos.Length; index++) {
 				try {
-					IPhoto photo = photos [index];
-					progress_dialog.Message = string.Format (
-                                                Catalog.GetString ("Uploading picture \"{0}\""), photo.Name);
+					IPhoto photo = photos[index];
+					progress_dialog.Message = string.Format (Catalog.GetString ("Uploading picture \"{0}\""), photo.Name);
 
 					progress_dialog.Fraction = photo_index / (double)selection.Count;
 					photo_index++;
 					progress_dialog.ProgressText = string.Format (
-						Catalog.GetString ("{0} of {1}"), photo_index,
-						selection.Count);
+						Catalog.GetString ("{0} of {1}"), photo_index, selection.Count);
 
 					info = new FileInfo (photo.DefaultVersion.Uri.LocalPath);
 					var stack = new FilterSet ();
@@ -402,10 +367,10 @@ namespace FSpot.Exporters.Flickr
 					ids.Add (id);
 
 					if (App.Instance.Database != null && photo is Photo)
-						App.Instance.Database.Exports.Create ((photo as Photo).Id,
-									      (photo as Photo).DefaultVersionId,
-									      ExportStore.FlickrExportType,
-									      token.UserId + ":" + token.Username + ":" + current_service.Name + ":" + id);
+						App.Instance.Database.Exports.Create ((photo as Models.Photo).Id,
+										  (photo as Models.Photo).DefaultVersionId,
+										  ExportStore.FlickrExportType,
+										  token.UserId + ":" + token.Username + ":" + current_service.Name + ":" + id);
 
 				} catch (Exception e) {
 					progress_dialog.Message = string.Format (Catalog.GetString ("Error Uploading To {0}: {1}"),
@@ -428,9 +393,9 @@ namespace FSpot.Exporters.Flickr
 			if (open && ids.Count != 0) {
 				string view_url;
 				if (current_service.Name == "Zooomr.com")
-					view_url = string.Format ("http://www.{0}/photos/{1}/", current_service.Name, token.Username);
+					view_url = $"http://www.{current_service.Name}/photos/{token.Username}/";
 				else {
-					view_url = string.Format ("http://www.{0}/tools/uploader_edit.gne?ids", current_service.Name);
+					view_url = $"http://www.{current_service.Name}/tools/uploader_edit.gne?ids";
 					bool first = true;
 
 					foreach (string id in ids) {
@@ -445,8 +410,8 @@ namespace FSpot.Exporters.Flickr
 
 		void HandleClicked (object sender, EventArgs args)
 		{
-			Log.Debug("Current state: " + CurrentState);
-			Log.Debug("Current verification text: " + oauth_verification_code.Text);
+			Log.Debug ("Current state: " + CurrentState);
+			Log.Debug ("Current verification text: " + oauth_verification_code.Text);
 			switch (CurrentState) {
 			// not connected to flickr at all. Initiate OAuth login
 			case State.Disconnected:
@@ -468,7 +433,7 @@ namespace FSpot.Exporters.Flickr
 
 		void HandlePublicChanged (object sender, EventArgs args)
 		{
-			bool sensitive = ! public_radio.Active;
+			bool sensitive = !public_radio.Active;
 			friend_check.Sensitive = sensitive;
 			family_check.Sensitive = sensitive;
 		}
@@ -493,16 +458,16 @@ namespace FSpot.Exporters.Flickr
 				return;
 			}
 
-			if (fr.CheckLogin(oauth_verification_code.Text) == null) {
+			if (fr.CheckLogin (oauth_verification_code.Text) == null) {
 				do_export_flickr.Sensitive = false;
 				var md =
 					new HigMessageDialog (Dialog,
-							      Gtk.DialogFlags.Modal |
-							      Gtk.DialogFlags.DestroyWithParent,
-							      Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
-							      Catalog.GetString ("Unable to log on."),
-							      string.Format (Catalog.GetString ("F-Spot was unable to log on to {0}.  Make sure you have given the authentication using {0} web browser interface."),
-									     current_service.Name));
+								  Gtk.DialogFlags.Modal |
+								  Gtk.DialogFlags.DestroyWithParent,
+								  Gtk.MessageType.Error, Gtk.ButtonsType.Ok,
+								  Catalog.GetString ("Unable to log on."),
+								  string.Format (Catalog.GetString ("F-Spot was unable to log on to {0}.  Make sure you have given the authentication using {0} web browser interface."),
+										 current_service.Name));
 				md.Run ();
 				md.Destroy ();
 				return;
@@ -546,50 +511,50 @@ namespace FSpot.Exporters.Flickr
 		{
 			switch (key) {
 			case SCALE_KEY:
-                scale_check.Active = Preferences.Get<bool> (key);
-                break;
-				
-			case SIZE_KEY:
-				size_spin.Value = (double) Preferences.Get<int> (key);
+				scale_check.Active = Preferences.Get<bool> (key);
 				break;
-				
+
+			case SIZE_KEY:
+				size_spin.Value = (double)Preferences.Get<int> (key);
+				break;
+
 			case BROWSER_KEY:
-                open_check.Active = Preferences.Get<bool> (key);
-                break;
-				
+				open_check.Active = Preferences.Get<bool> (key);
+				break;
+
 			case TAGS_KEY:
-                tag_check.Active = Preferences.Get<bool> (key);
-                break;
-				
+				tag_check.Active = Preferences.Get<bool> (key);
+				break;
+
 			case TAG_HIERARCHY_KEY:
-                hierarchy_check.Active = Preferences.Get<bool> (key);
-                break;
-				
+				hierarchy_check.Active = Preferences.Get<bool> (key);
+				break;
+
 			case IGNORE_TOP_LEVEL_KEY:
-                ignore_top_level_check.Active = Preferences.Get<bool> (key);
-                break;
+				ignore_top_level_check.Active = Preferences.Get<bool> (key);
+				break;
 
 			case FlickrRemote.TOKEN_FLICKR:
 			case FlickrRemote.TOKEN_23HQ:
 			case FlickrRemote.TOKEN_ZOOOMR:
-				token = new OAuthAccessToken();
+				token = new OAuthAccessToken ();
 				token.Token = Preferences.Get<string> (key);
 				token.TokenSecret = Preferences.Get<string> (key + "secret");
 				token.UserId = Preferences.Get<string> (key + "userId");
 				token.Username = Preferences.Get<string> (key + "userName");
 				break;
-				
+
 			case PUBLIC_KEY:
-                public_radio.Active = Preferences.Get<bool> (key);
-                break;
-				
+				public_radio.Active = Preferences.Get<bool> (key);
+				break;
+
 			case FAMILY_KEY:
-                family_check.Active = Preferences.Get<bool> (key);
-                break;
-				
+				family_check.Active = Preferences.Get<bool> (key);
+				break;
+
 			case FRIENDS_KEY:
-                friend_check.Active = Preferences.Get<bool> (key);
-                break;
+				friend_check.Active = Preferences.Get<bool> (key);
+				break;
 				/*
 			case Preferences.EXPORT_FLICKR_EMAIL:
 

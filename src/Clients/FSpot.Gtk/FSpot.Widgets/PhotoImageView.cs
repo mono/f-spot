@@ -11,28 +11,10 @@
 // Copyright (C) 2008-2010 Ruben Vermeersch
 // Copyright (C) 2007-2009 Stephane Delcroix
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be
-// included in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED AS IS, WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-//
+// Licensed under the MIT License. See LICENSE file in the project root for full license information.
 
 using System;
-
+using FSpot.Cms;
 using FSpot.Core;
 using FSpot.Loaders;
 using FSpot.Settings;
@@ -388,9 +370,9 @@ namespace FSpot.Widgets
 
 		protected override void ApplyColorTransform (Pixbuf pixbuf)
 		{
-			Cms.Profile screen_profile;
-			if (FSpot.ColorManagement.Profiles.TryGetValue (Preferences.Get<string> (Preferences.ColorManagementDisplayProfile), out screen_profile))
-				FSpot.ColorManagement.ApplyProfile (pixbuf, screen_profile);
+			var profileName = Preferences.Get<string> (Preferences.ColorManagementDisplayProfile);
+			if (ColorManagement.Profiles.TryGetValue (profileName, out var screenProfile))
+				ColorManagement.ApplyProfile (pixbuf, screenProfile);
 		}
 
 		bool crop_helpers = true;
@@ -412,25 +394,25 @@ namespace FSpot.Widgets
 			if (!CanSelect || !CropHelpers || Selection == Rectangle.Zero)
 				return false;
 
-			using (Cairo.Context ctx = CairoHelper.Create (GdkWindow)) {
-				ctx.SetSourceRGBA (.7, .7, .7, .8);
-				ctx.SetDash (new double [] { 10, 15 }, 0);
-				ctx.LineWidth = .8;
-				for (int i = 1; i < 3; i++) {
-					Point s = ImageCoordsToWindow (new Point (Selection.X + Selection.Width / 3 * i, Selection.Y));
-					Point e = ImageCoordsToWindow (new Point (Selection.X + Selection.Width / 3 * i, Selection.Y + Selection.Height));
-					ctx.MoveTo (s.X, s.Y);
-					ctx.LineTo (e.X, e.Y);
-					ctx.Stroke ();
-				}
-				for (int i = 1; i < 3; i++) {
-					Point s = ImageCoordsToWindow (new Point (Selection.X, Selection.Y + Selection.Height / 3 * i));
-					Point e = ImageCoordsToWindow (new Point (Selection.X + Selection.Width, Selection.Y + Selection.Height / 3 * i));
-					ctx.MoveTo (s.X, s.Y);
-					ctx.LineTo (e.X, e.Y);
-					ctx.Stroke ();
-				}
+			using Cairo.Context ctx = CairoHelper.Create (GdkWindow);
+			ctx.SetSourceRGBA (.7, .7, .7, .8);
+			ctx.SetDash (new double [] { 10, 15 }, 0);
+			ctx.LineWidth = .8;
+			for (int i = 1; i < 3; i++) {
+				Point s = ImageCoordsToWindow (new Point (Selection.X + Selection.Width / 3 * i, Selection.Y));
+				Point e = ImageCoordsToWindow (new Point (Selection.X + Selection.Width / 3 * i, Selection.Y + Selection.Height));
+				ctx.MoveTo (s.X, s.Y);
+				ctx.LineTo (e.X, e.Y);
+				ctx.Stroke ();
 			}
+			for (int i = 1; i < 3; i++) {
+				Point s = ImageCoordsToWindow (new Point (Selection.X, Selection.Y + Selection.Height / 3 * i));
+				Point e = ImageCoordsToWindow (new Point (Selection.X + Selection.Width, Selection.Y + Selection.Height / 3 * i));
+				ctx.MoveTo (s.X, s.Y);
+				ctx.LineTo (e.X, e.Y);
+				ctx.Stroke ();
+			}
+
 			return true;
 		}
 	}

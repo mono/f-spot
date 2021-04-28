@@ -36,7 +36,7 @@ using System.IO;
 
 namespace FSpot.Imaging
 {
-	class CiffImageFile : BaseImageFile
+	internal class CiffImageFile : BaseImageFile
 	{
 		#region private types
 

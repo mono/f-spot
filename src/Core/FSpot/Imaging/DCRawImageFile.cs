@@ -33,7 +33,7 @@ using Hyena;
 
 namespace FSpot.Imaging
 {
-	class DCRawImageFile : BaseImageFile
+	internal class DCRawImageFile : BaseImageFile
 	{
 		const string dcraw_command = "dcraw";
 

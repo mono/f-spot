@@ -30,7 +30,7 @@ using System.IO;
 
 namespace FSpot.FileSystem
 {
-	class DotNetPath : IPath
+	internal class DotNetPath : IPath
 	{
 		public string GetTempPath () => Path.GetTempPath ();
 	}

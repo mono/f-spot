@@ -2,9 +2,10 @@
   <Import Project="fspot.props" />
 
   <PropertyGroup>
-    <FSpotTargetFramework>net472</FSpotTargetFramework>
+    <FSpotTargetFramework>net48</FSpotTargetFramework>
     <LangVersion>latest</LangVersion>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup>
